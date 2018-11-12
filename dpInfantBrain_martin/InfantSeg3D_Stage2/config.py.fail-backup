@@ -1,0 +1,77 @@
+import os
+import tensorflow as tf
+FLAGS = tf.app.flags.FLAGS
+
+
+tf.app.flags.DEFINE_integer('cls_out', 4, "classfy how many categories")
+tf.app.flags.DEFINE_integer('batch_size', 2, "Number of samples per batch.")
+tf.app.flags.DEFINE_bool('augmentation', True, "whether to do augmentation in Training.")
+
+tf.app.flags.DEFINE_bool('xavier_init', False, "whether multi-modality is used")
+
+tf.app.flags.DEFINE_string('patch_size_str', '64,64,64', "patch size that we will extract from 3D image")
+tf.app.flags.DEFINE_integer('batches_one_image', 32, "how many batches extraction from a 3D image for training")
+tf.app.flags.DEFINE_integer('overlap_add_num', 2, "patch_num = Len/patch_size + overlap_add_num when extracting patches for test")
+tf.app.flags.DEFINE_integer('prepost_pad', 5, "padding when remove zero backgrounds in preprocess")
+tf.app.flags.DEFINE_integer('training_crop_pad', 0, "padding when remove zero backgrounds in preprocess")
+
+
+tf.app.flags.DEFINE_float('momentum', 0.9, "momentum for accelearating training")
+tf.app.flags.DEFINE_float('learning_rate_start', 1e-3, "start learning rate ") # 2e-3
+tf.app.flags.DEFINE_integer('learning_rate_reduce_life', 3000, "Number of batches until learning rate is reduced. lr *= 0.1")
+tf.app.flags.DEFINE_float('learning_rate_percentage', 0.5, "Number of batches until learning rate is reduced. lr *= 0.1")
+tf.app.flags.DEFINE_integer('max_batch', 10000, "max batch number")
+tf.app.flags.DEFINE_integer('checkpoint_period', 2000, "Number of batches in between checkpoints")
+
+
+tf.app.flags.DEFINE_float('aux1_weight', 0.33, "loss weight of aux1 classifier")
+tf.app.flags.DEFINE_float('aux2_weight', 0.67, "loss weight of aux2 classifier")
+tf.app.flags.DEFINE_float('main_weight', 1.0, "loss weight of main classifier")
+
+tf.app.flags.DEFINE_float('L2_loss_weight', 0.005, "loss weight of main classifier")
+tf.app.flags.DEFINE_float('reject_T', 0.05, "remove isolated regions, when the area is less then reject_T")
+
+
+#tf.app.flags.DEFINE_string('checkpoint_dir', './new_checkpoint_dir', "Output folder where training logs are dumped.")
+tf.app.flags.DEFINE_string('checkpoint_dir','/proj/NIRAL/users/siyangj/model_11012016/models/2/11020950', "Output folder where training logs and models are dumped.")
+tf.app.flags.DEFINE_string('last_trained_checkpoint', '/proj/NIRAL/users/jphong/6moSegData/IBIS1/new_checkpoint/1', "where is the pre-trained model")
+#tf.app.flags.DEFINE_string('last_trained_checkpoint', './checkpoint_t12_dm123_10000', "where is the pre-trained model")
+tf.app.flags.DEFINE_bool('restore_from_last', True, "whether start training from last trained checkpoint")
+
+
+#tf.app.flags.DEFINE_string('nifti_dir',  './data_Miccai2017_ISeg/iSeg-2017-Training', "Store the training hdf5 file list.")
+#tf.app.flags.DEFINE_string('hdf5_list_path', './hdf5/all_data.list', "Store the training hdf5 file list.")
+#tf.app.flags.DEFINE_string('hdf5_train_list_path', './hdf5/train_data.list', "Store the training hdf5 file list.")
+#tf.app.flags.DEFINE_string('hdf5_validation_list_path', './hdf5/validation_data.list', "Store the training hdf5 file list.")
+#tf.app.flags.DEFINE_string('hdf5_dir', './hdf5', "Store the path which contains hdf5 files.")
+
+
+tf.app.flags.DEFINE_string('nifti_dir','/proj/NIRAL/users/siyangj/myData/BernNet/Train/', "Store the training hdf5 file list.")
+tf.app.flags.DEFINE_string('hdf5_list_path','/proj/NIRAL/users/siyangj/myData/BernNet/hdf5/all_data.list', "Store the training hdf5 file list.")
+tf.app.flags.DEFINE_string('hdf5_train_list_path','/proj/NIRAL/users/siyangj/myData/BernNet/hdf5/train_data.list', "Store the training hdf5 file list.")
+tf.app.flags.DEFINE_string('hdf5_validation_list_path','/proj/NIRAL/users/siyangj/myData/BernNet/hdf5/validation_data.list', "Store the training hdf5 file list.")
+tf.app.flags.DEFINE_string('hdf5_dir','/proj/NIRAL/users/siyangj/myData/BernNet/hdf5/', "Store the path which contains hdf5 files.")
+
+
+################# Pretrain Model: Partial Transfer Learning  ########################################################
+tf.app.flags.DEFINE_bool('from_pretrain', False, "when init value from pretrain-ed model")
+tf.app.flags.DEFINE_string('hdf5_hip_transfer_model', './pretrain_model/hip_pretrain_model.h5', "where is the pre-trained model")
+tf.app.flags.DEFINE_string('hdf5_sports_3d_model', './pretrain_model/sports1M_weights.h5', "where is the pre-trained model")
+tf.app.flags.DEFINE_string('model_saved_hdf5', '/proj/NIRAL/users/jphong/6moSegData/IBIS/model/1st_stage_model.h5', "where is the pre-trained model")
+# tf.app.flags.DEFINE_bool('xavier_init', False, "whether multi-modality is used")
+
+
+tf.app.flags.DEFINE_bool('log_device_placement', False, "Log the device where variables are placed.")
+tf.app.flags.DEFINE_integer('random_seed', 19970215, "Seed used to initialize rng.")
+tf.app.flags.DEFINE_float('epsilon', 1e-8, "Fuzz term to avoid numerical instability")
+
+
+## Test nifti images
+#tf.app.flags.DEFINE_string('test_dir','/proj/NIRAL/users/jphong/6moSegData',"the directory which contains nifti images to be segmented.")
+tf.app.flags.DEFINE_string('test_dir','/proj/NIRAL/users/siyangj/myData/BernNet/Test',"the directory which contains nifti images to be segmented.")
+
+def main():
+  print FLAGS.testing_file
+
+if __name__ == '__main__':
+  main()

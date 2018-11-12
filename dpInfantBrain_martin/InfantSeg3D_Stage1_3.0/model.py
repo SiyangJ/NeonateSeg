@@ -323,14 +323,31 @@ def create_model_infant_seg(train_phase=True):
             aux1_loss, aux2_loss, main_loss, 
             final_loss, gene_vars, main_possibility)
 
-
-
+###############################################################################
+###### Editted by Siyang Jing of UNC on Nov 12
+###### Only train part of the variables
+###### Train first two conv stages, last deconv stage, and batch norms
+def _get_var_list():
+    trainable_var_list = tf.trainable_variables()
+    TRAIN_NAME_LIST = ['deconv3','_conv1','_conv2','gamma','beta','main','aux']
+    to_train_list = []
+    for v in trainable_var_list:
+        for n in TRAIN_NAME_LIST:
+            if n in v.name:
+                to_train_list.append(v)
+                break
+    return to_train_list
 
 def create_optimizers(train_loss):
     learning_rate  = tf.placeholder(dtype=tf.float32, name='learning_rate')
     momentum = FLAGS.momentum
     train_opti = tf.train.MomentumOptimizer(learning_rate, momentum)
     global_step    = tf.Variable(0, dtype=tf.int64,   trainable=False, name='global_step')
-    train_minimize = train_opti.minimize(train_loss, name='loss_minimize', global_step=global_step)
+    ###############################################################################
+    ###### Editted by Siyang Jing of UNC on Nov 12
+    ###### Only train part of the variables
+    ###### Train first two conv stages, last deconv stage, and batch norms
+    var_list = _get_var_list()
+    train_minimize = train_opti.minimize(train_loss, name='loss_minimize', global_step=global_step, var_list=var_list)
 
     return train_minimize, learning_rate, global_step

@@ -1,0 +1,17 @@
+__pycache__/
+JP_6mon_model
+.ipynb_checkpoints/
+myData/
+myTrialData/
+NeonateMRISeg/
+NiftyNet/
+checkpoint
+*.data-00000-of-00001
+*.index
+*.pyc
+data_Miccai2017_ISeg/
+hdf5/
+models/
+logs/
+inference*/
+pretrain_model/

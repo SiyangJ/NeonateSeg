@@ -1,0 +1,16 @@
+1flip,training
+1,inference
+2flip,training
+2,training
+3flip,inference
+3,training
+4flip,training
+4,training
+5flip,training
+5,training
+6flip,validation
+6,training
+7flip,training
+7,training
+8flip,validation
+8,training

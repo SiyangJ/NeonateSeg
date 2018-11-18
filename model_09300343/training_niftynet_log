@@ -1,0 +1,208 @@
+INFO:niftynet:2018-09-30 07:49:31,651: starting segmentation application
+INFO:niftynet:2018-09-30 07:49:31,652: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/T1.csv" instead.
+INFO:niftynet:2018-09-30 07:49:31,652: [T1] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_09300343/T1.csv
+INFO:niftynet:2018-09-30 07:49:31,672: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/T2.csv" instead.
+INFO:niftynet:2018-09-30 07:49:31,672: [T2] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_09300343/T2.csv
+INFO:niftynet:2018-09-30 07:49:31,685: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/parcellation.csv" instead.
+INFO:niftynet:2018-09-30 07:49:31,685: [parcellation] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_09300343/parcellation.csv
+INFO:niftynet:2018-09-30 07:49:31,701: 
+
+Number of subjects 8, input section names: ['subject_id', 'T1', 'T2', 'parcellation']
+Dataset partitioning:
+-- training 6 cases (75.00%),
+-- validation 1 cases (12.50%),
+-- inference 1 cases (12.50%).
+
+INFO:niftynet:2018-09-30 07:49:32,398: Image reader: loading 6 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-30 07:49:32,399: Image reader: loading 6 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-30 07:49:32,502: Image reader: loading 1 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-30 07:49:32,502: Image reader: loading 1 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-30 07:49:32,547: training normalisation histogram references for image:{'T1', 'T2'}, using 6 subjects
+INFO:niftynet:2018-09-30 07:49:34,957: Looking for the set of unique discrete labels from input label using 6 subjects
+WARNING:niftynet:2018-09-30 07:49:35,538: unusual discrete values: number of unique labels to normalise 669753
+WARNING:niftynet:2018-09-30 07:49:36,088: unusual discrete values: number of unique labels to normalise 502356
+WARNING:niftynet:2018-09-30 07:49:36,951: moved existing histogram reference file
+ from /proj/NIRAL/users/siyangj/model_09300343/hist_ref.txt to /proj/NIRAL/users/siyangj/model_09300343/hist_ref.txt.backup
+INFO:niftynet:2018-09-30 07:49:37,852: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-30 07:49:37,852: label mapping ready for label:('parcellation',), 1168207 classes
+INFO:niftynet:2018-09-30 07:49:46,226: reading size of preprocessed images
+INFO:niftynet:2018-09-30 07:49:46,243: initialised window instance
+INFO:niftynet:2018-09-30 07:49:46,243: buffering with 32 windows
+INFO:niftynet:2018-09-30 07:49:46,248: initialised sampler output {'image_location': (300, 7), 'label': (300, 12, 12, 12, 1, 1), 'image': (300, 100, 100, 100, 1, 2), 'label_location': (300, 7)} 
+INFO:niftynet:2018-09-30 07:49:46,248: reading size of preprocessed images
+INFO:niftynet:2018-09-30 07:49:46,279: initialised window instance
+INFO:niftynet:2018-09-30 07:49:46,279: buffering with 32 windows
+INFO:niftynet:2018-09-30 07:49:46,283: initialised sampler output {'image_location': (300, 7), 'label': (300, 12, 12, 12, 1, 1), 'image': (300, 100, 100, 100, 1, 2), 'label_location': (300, 7)} 
+INFO:niftynet:2018-09-30 07:49:46,301: Import [unet88] from /nas/longleaf/home/siyangj/niftynet/extensions/network/my_nets/unet88.py.
+INFO:niftynet:2018-09-30 07:49:47,422: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 07:49:49,906: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 07:49:52,307: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 07:49:54,730: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 07:50:00,899: Starting preprocessing threads...
+INFO:niftynet:2018-09-30 07:50:00,900: New thread: 0
+INFO:niftynet:2018-09-30 07:50:00,900: New thread: 1
+INFO:niftynet:2018-09-30 07:50:00,902: New thread: 2
+INFO:niftynet:2018-09-30 07:50:00,902: New thread: 3
+INFO:niftynet:2018-09-30 07:50:00,903: Starting preprocessing threads...
+INFO:niftynet:2018-09-30 07:50:00,906: New thread: 0
+INFO:niftynet:2018-09-30 07:50:00,908: New thread: 1
+INFO:niftynet:2018-09-30 07:50:00,912: New thread: 2
+INFO:niftynet:2018-09-30 07:50:00,914: New thread: 3
+INFO:niftynet:2018-09-30 07:50:00,914: filling queues (this can take a few minutes).
+INFO:niftynet:2018-09-30 07:50:06,445: Parameters from random initialisations ...
+INFO:niftynet:2018-09-30 08:25:22,992: starting segmentation application
+INFO:niftynet:2018-09-30 08:25:22,993: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/T1.csv" instead.
+INFO:niftynet:2018-09-30 08:25:22,993: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09300343/T1.csv".
+INFO:niftynet:2018-09-30 08:25:22,993: [T1] using existing csv file /proj/NIRAL/users/siyangj/model_09300343/T1.csv, skipped filenames search
+INFO:niftynet:2018-09-30 08:25:22,997: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/T2.csv" instead.
+INFO:niftynet:2018-09-30 08:25:22,998: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09300343/T2.csv".
+INFO:niftynet:2018-09-30 08:25:22,998: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_09300343/T2.csv, skipped filenames search
+INFO:niftynet:2018-09-30 08:25:23,003: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/parcellation.csv" instead.
+INFO:niftynet:2018-09-30 08:25:23,003: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09300343/parcellation.csv".
+INFO:niftynet:2018-09-30 08:25:23,003: [parcellation] using existing csv file /proj/NIRAL/users/siyangj/model_09300343/parcellation.csv, skipped filenames search
+WARNING:niftynet:2018-09-30 08:25:23,006: Loading from existing partitioning file /proj/NIRAL/users/siyangj/model_09300343/data_split, ignoring partitioning ratios.
+INFO:niftynet:2018-09-30 08:25:23,009: 
+
+Number of subjects 8, input section names: ['subject_id', 'T1', 'T2', 'parcellation']
+Dataset partitioning:
+-- training 6 cases (75.00%),
+-- validation 1 cases (12.50%),
+-- inference 1 cases (12.50%).
+
+INFO:niftynet:2018-09-30 08:25:23,385: Image reader: loading 6 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-30 08:25:23,385: Image reader: loading 6 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-30 08:25:23,424: Image reader: loading 1 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-30 08:25:23,424: Image reader: loading 1 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-30 08:25:25,055: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-30 08:25:25,055: label mapping ready for label:('parcellation',), 1168207 classes
+INFO:niftynet:2018-09-30 08:25:25,056: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-30 08:25:25,056: label mapping ready for label:('parcellation',), 1168207 classes
+INFO:niftynet:2018-09-30 08:25:33,448: reading size of preprocessed images
+INFO:niftynet:2018-09-30 08:25:33,537: initialised window instance
+INFO:niftynet:2018-09-30 08:25:33,537: buffering with 32 windows
+INFO:niftynet:2018-09-30 08:25:33,542: initialised sampler output {'image_location': (300, 7), 'label_location': (300, 7), 'label': (300, 12, 12, 12, 1, 1), 'image': (300, 100, 100, 100, 1, 2)} 
+INFO:niftynet:2018-09-30 08:25:33,542: reading size of preprocessed images
+INFO:niftynet:2018-09-30 08:25:33,571: initialised window instance
+INFO:niftynet:2018-09-30 08:25:33,571: buffering with 32 windows
+INFO:niftynet:2018-09-30 08:25:33,574: initialised sampler output {'image_location': (300, 7), 'label_location': (300, 7), 'label': (300, 12, 12, 12, 1, 1), 'image': (300, 100, 100, 100, 1, 2)} 
+INFO:niftynet:2018-09-30 08:25:33,582: Import [unet88] from /nas/longleaf/home/siyangj/niftynet/extensions/network/my_nets/unet88.py.
+INFO:niftynet:2018-09-30 08:25:34,661: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 08:25:37,151: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 08:25:39,555: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 08:25:41,969: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 08:25:49,778: Parameters from random initialisations ...
+INFO:niftynet:2018-09-30 08:25:49,911: Starting preprocessing threads...
+INFO:niftynet:2018-09-30 08:25:49,911: New thread: 0
+INFO:niftynet:2018-09-30 08:25:49,912: New thread: 1
+INFO:niftynet:2018-09-30 08:25:49,913: New thread: 2
+INFO:niftynet:2018-09-30 08:25:49,914: New thread: 3
+INFO:niftynet:2018-09-30 08:25:49,915: Starting preprocessing threads...
+INFO:niftynet:2018-09-30 08:25:49,917: New thread: 0
+INFO:niftynet:2018-09-30 08:25:49,919: New thread: 1
+INFO:niftynet:2018-09-30 08:25:49,920: New thread: 2
+INFO:niftynet:2018-09-30 08:25:49,923: New thread: 3
+INFO:niftynet:2018-09-30 08:25:49,924: filling queues (this can take a few minutes).
+INFO:niftynet:2018-09-30 09:16:23,226: starting segmentation application
+INFO:niftynet:2018-09-30 09:16:23,227: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/T1.csv" instead.
+INFO:niftynet:2018-09-30 09:16:23,227: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09300343/T1.csv".
+INFO:niftynet:2018-09-30 09:16:23,228: [T1] using existing csv file /proj/NIRAL/users/siyangj/model_09300343/T1.csv, skipped filenames search
+INFO:niftynet:2018-09-30 09:16:23,232: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/T2.csv" instead.
+INFO:niftynet:2018-09-30 09:16:23,233: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09300343/T2.csv".
+INFO:niftynet:2018-09-30 09:16:23,233: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_09300343/T2.csv, skipped filenames search
+INFO:niftynet:2018-09-30 09:16:23,238: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/parcellation.csv" instead.
+INFO:niftynet:2018-09-30 09:16:23,238: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09300343/parcellation.csv".
+INFO:niftynet:2018-09-30 09:16:23,239: [parcellation] using existing csv file /proj/NIRAL/users/siyangj/model_09300343/parcellation.csv, skipped filenames search
+WARNING:niftynet:2018-09-30 09:16:23,243: Loading from existing partitioning file /proj/NIRAL/users/siyangj/model_09300343/data_split, ignoring partitioning ratios.
+INFO:niftynet:2018-09-30 09:16:23,246: 
+
+Number of subjects 8, input section names: ['subject_id', 'T1', 'T2', 'parcellation']
+Dataset partitioning:
+-- training 6 cases (75.00%),
+-- validation 1 cases (12.50%),
+-- inference 1 cases (12.50%).
+
+INFO:niftynet:2018-09-30 09:16:23,632: Image reader: loading 6 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-30 09:16:23,632: Image reader: loading 6 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-30 09:16:23,677: Image reader: loading 1 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-30 09:16:23,677: Image reader: loading 1 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-30 09:16:25,437: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-30 09:16:25,437: label mapping ready for label:('parcellation',), 1168207 classes
+INFO:niftynet:2018-09-30 09:16:25,438: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-30 09:16:25,438: label mapping ready for label:('parcellation',), 1168207 classes
+INFO:niftynet:2018-09-30 09:16:33,272: reading size of preprocessed images
+INFO:niftynet:2018-09-30 09:16:33,361: initialised window instance
+INFO:niftynet:2018-09-30 09:16:33,361: buffering with 32 windows
+INFO:niftynet:2018-09-30 09:16:33,366: initialised sampler output {'image': (300, 100, 100, 100, 1, 2), 'label': (300, 12, 12, 12, 1, 1), 'label_location': (300, 7), 'image_location': (300, 7)} 
+INFO:niftynet:2018-09-30 09:16:33,366: reading size of preprocessed images
+INFO:niftynet:2018-09-30 09:16:33,397: initialised window instance
+INFO:niftynet:2018-09-30 09:16:33,398: buffering with 32 windows
+INFO:niftynet:2018-09-30 09:16:33,401: initialised sampler output {'image': (300, 100, 100, 100, 1, 2), 'label': (300, 12, 12, 12, 1, 1), 'label_location': (300, 7), 'image_location': (300, 7)} 
+INFO:niftynet:2018-09-30 09:16:33,408: Import [unet88] from /nas/longleaf/home/siyangj/niftynet/extensions/network/my_nets/unet88.py.
+INFO:niftynet:2018-09-30 09:16:34,522: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 09:16:37,041: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 09:16:39,465: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 09:16:45,115: Starting preprocessing threads...
+INFO:niftynet:2018-09-30 09:16:45,115: New thread: 0
+INFO:niftynet:2018-09-30 09:16:45,115: New thread: 1
+INFO:niftynet:2018-09-30 09:16:45,117: New thread: 2
+INFO:niftynet:2018-09-30 09:16:45,117: Starting preprocessing threads...
+INFO:niftynet:2018-09-30 09:16:45,118: New thread: 0
+INFO:niftynet:2018-09-30 09:16:45,120: New thread: 1
+INFO:niftynet:2018-09-30 09:16:45,122: New thread: 2
+INFO:niftynet:2018-09-30 09:16:45,122: filling queues (this can take a few minutes).
+INFO:niftynet:2018-09-30 09:16:48,829: Parameters from random initialisations ...
+INFO:niftynet:2018-09-30 14:23:57,776: cleaning up...
+INFO:niftynet:2018-09-30 14:23:57,795: stopping sampling threads
+INFO:niftynet:2018-09-30 14:24:04,465: iter 1 saved: /proj/NIRAL/users/siyangj/model_09300343/models/model.ckpt
+INFO:niftynet:2018-09-30 15:11:40,018: starting segmentation application
+INFO:niftynet:2018-09-30 15:11:40,019: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/parcellation.csv" instead.
+INFO:niftynet:2018-09-30 15:11:40,019: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09300343/parcellation.csv".
+INFO:niftynet:2018-09-30 15:11:40,020: [parcellation] using existing csv file /proj/NIRAL/users/siyangj/model_09300343/parcellation.csv, skipped filenames search
+INFO:niftynet:2018-09-30 15:11:40,026: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/T1.csv" instead.
+INFO:niftynet:2018-09-30 15:11:40,026: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09300343/T1.csv".
+INFO:niftynet:2018-09-30 15:11:40,026: [T1] using existing csv file /proj/NIRAL/users/siyangj/model_09300343/T1.csv, skipped filenames search
+INFO:niftynet:2018-09-30 15:11:40,032: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09300343/T2.csv" instead.
+INFO:niftynet:2018-09-30 15:11:40,033: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09300343/T2.csv".
+INFO:niftynet:2018-09-30 15:11:40,033: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_09300343/T2.csv, skipped filenames search
+WARNING:niftynet:2018-09-30 15:11:40,037: Loading from existing partitioning file /proj/NIRAL/users/siyangj/model_09300343/data_split, ignoring partitioning ratios.
+INFO:niftynet:2018-09-30 15:11:40,040: 
+
+Number of subjects 8, input section names: ['subject_id', 'parcellation', 'T1', 'T2']
+Dataset partitioning:
+-- training 6 cases (75.00%),
+-- validation 1 cases (12.50%),
+-- inference 1 cases (12.50%).
+
+INFO:niftynet:2018-09-30 15:11:40,544: Image reader: loading 6 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-30 15:11:40,544: Image reader: loading 6 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-30 15:11:40,583: Image reader: loading 1 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-30 15:11:40,583: Image reader: loading 1 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-30 15:11:42,226: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-30 15:11:42,226: label mapping ready for label:('parcellation',), 1168207 classes
+INFO:niftynet:2018-09-30 15:11:42,226: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-30 15:11:42,226: label mapping ready for label:('parcellation',), 1168207 classes
+INFO:niftynet:2018-09-30 15:11:50,672: reading size of preprocessed images
+INFO:niftynet:2018-09-30 15:11:50,753: initialised window instance
+INFO:niftynet:2018-09-30 15:11:50,753: buffering with 32 windows
+INFO:niftynet:2018-09-30 15:11:50,758: initialised sampler output {'image': (300, 100, 100, 100, 1, 2), 'image_location': (300, 7), 'label_location': (300, 7), 'label': (300, 12, 12, 12, 1, 1)} 
+INFO:niftynet:2018-09-30 15:11:50,759: reading size of preprocessed images
+INFO:niftynet:2018-09-30 15:11:50,790: initialised window instance
+INFO:niftynet:2018-09-30 15:11:50,791: buffering with 32 windows
+INFO:niftynet:2018-09-30 15:11:50,794: initialised sampler output {'image': (300, 100, 100, 100, 1, 2), 'image_location': (300, 7), 'label_location': (300, 7), 'label': (300, 12, 12, 12, 1, 1)} 
+INFO:niftynet:2018-09-30 15:11:50,801: Import [unet88] from /nas/longleaf/home/siyangj/niftynet/extensions/network/my_nets/unet88.py.
+INFO:niftynet:2018-09-30 15:11:51,888: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 15:11:54,367: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 15:11:56,825: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-09-30 15:12:03,713: Parameters from random initialisations ...
+INFO:niftynet:2018-09-30 15:12:03,846: Starting preprocessing threads...
+INFO:niftynet:2018-09-30 15:12:03,846: New thread: 0
+INFO:niftynet:2018-09-30 15:12:03,846: New thread: 1
+INFO:niftynet:2018-09-30 15:12:03,847: New thread: 2
+INFO:niftynet:2018-09-30 15:12:03,847: Starting preprocessing threads...
+INFO:niftynet:2018-09-30 15:12:03,850: New thread: 0
+INFO:niftynet:2018-09-30 15:12:03,851: New thread: 1
+INFO:niftynet:2018-09-30 15:12:03,854: New thread: 2
+INFO:niftynet:2018-09-30 15:12:03,855: filling queues (this can take a few minutes).
+INFO:niftynet:2018-09-30 20:39:48,999: cleaning up...
+INFO:niftynet:2018-09-30 20:39:49,021: stopping sampling threads
+INFO:niftynet:2018-09-30 20:39:54,274: iter 1 saved: /proj/NIRAL/users/siyangj/model_09300343/models/model.ckpt

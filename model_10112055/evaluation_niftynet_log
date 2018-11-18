@@ -1,0 +1,56 @@
+INFO:niftynet:2018-10-12 21:08:38,535: starting segmentation application
+INFO:niftynet:2018-10-12 21:08:38,538: [inferred] using existing csv file /proj/NIRAL/users/siyangj/model_10112055/inference/inferred.csv, skipped filenames search
+INFO:niftynet:2018-10-12 21:08:38,559: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10112055/T2.csv" instead.
+INFO:niftynet:2018-10-12 21:08:38,560: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10112055/T2.csv".
+INFO:niftynet:2018-10-12 21:08:38,561: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_10112055/T2.csv, skipped filenames search
+INFO:niftynet:2018-10-12 21:08:38,589: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10112055/parcellation.csv" instead.
+INFO:niftynet:2018-10-12 21:08:38,590: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10112055/parcellation.csv".
+INFO:niftynet:2018-10-12 21:08:38,590: [parcellation] using existing csv file /proj/NIRAL/users/siyangj/model_10112055/parcellation.csv, skipped filenames search
+INFO:niftynet:2018-10-12 21:08:38,615: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10112055/T1.csv" instead.
+INFO:niftynet:2018-10-12 21:08:38,617: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10112055/T1.csv".
+INFO:niftynet:2018-10-12 21:08:38,617: [T1] using existing csv file /proj/NIRAL/users/siyangj/model_10112055/T1.csv, skipped filenames search
+WARNING:niftynet:2018-10-12 21:08:38,638: Loading from existing partitioning file /proj/NIRAL/users/siyangj/model_10112055/data_split, ignoring partitioning ratios.
+INFO:niftynet:2018-10-12 21:08:38,702: 
+
+Number of subjects 8, input section names: ['subject_id', 'inferred', 'T2', 'parcellation', 'T1']
+Dataset partitioning:
+-- training 6 cases (75.00%),
+-- validation 1 cases (12.50%),
+-- inference 1 cases (12.50%).
+
+INFO:niftynet:2018-10-12 21:08:39,576: Image reader: loading 8 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-10-12 21:08:39,576: Image reader: loading 8 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-10-12 21:08:39,576: Image reader: loading 8 subjects from sections ('inferred',) as input [inferred]
+INFO:niftynet:2018-10-12 21:08:39,599: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-10-12 21:08:39,599: label mapping ready for label:('parcellation',), 4 classes
+INFO:niftynet:2018-10-12 21:08:39,599: label mapping ready for inferred:('inferred',), 4 classes
+INFO:niftynet:2018-10-12 21:09:01,012: Cleaning up...
+INFO:niftynet:2018-10-12 21:09:01,013: SegmentationApplication stopped (time in second 21.41).
+INFO:niftynet:2018-10-20 01:20:05,020: starting segmentation application
+INFO:niftynet:2018-10-20 01:20:05,024: [inferred] using existing csv file /proj/NIRAL/users/siyangj/model_10112055/inference_21900_normal/inferred.csv, skipped filenames search
+INFO:niftynet:2018-10-20 01:20:05,029: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10112055/T1.csv" instead.
+INFO:niftynet:2018-10-20 01:20:05,030: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10112055/T1.csv".
+INFO:niftynet:2018-10-20 01:20:05,031: [T1] using existing csv file /proj/NIRAL/users/siyangj/model_10112055/T1.csv, skipped filenames search
+INFO:niftynet:2018-10-20 01:20:05,037: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10112055/parcellation.csv" instead.
+INFO:niftynet:2018-10-20 01:20:05,038: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10112055/parcellation.csv".
+INFO:niftynet:2018-10-20 01:20:05,038: [parcellation] using existing csv file /proj/NIRAL/users/siyangj/model_10112055/parcellation.csv, skipped filenames search
+INFO:niftynet:2018-10-20 01:20:05,044: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10112055/T2.csv" instead.
+INFO:niftynet:2018-10-20 01:20:05,045: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10112055/T2.csv".
+INFO:niftynet:2018-10-20 01:20:05,045: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_10112055/T2.csv, skipped filenames search
+WARNING:niftynet:2018-10-20 01:20:05,052: Loading from existing partitioning file /proj/NIRAL/users/siyangj/model_10112055/data_split, ignoring partitioning ratios.
+INFO:niftynet:2018-10-20 01:20:05,056: 
+
+Number of subjects 8, input section names: ['subject_id', 'inferred', 'T1', 'parcellation', 'T2']
+Dataset partitioning:
+-- training 6 cases (75.00%),
+-- validation 1 cases (12.50%),
+-- inference 1 cases (12.50%).
+
+INFO:niftynet:2018-10-20 01:20:05,774: Image reader: loading 8 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-10-20 01:20:05,774: Image reader: loading 8 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-10-20 01:20:05,774: Image reader: loading 8 subjects from sections ('inferred',) as input [inferred]
+INFO:niftynet:2018-10-20 01:20:05,782: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-10-20 01:20:05,782: label mapping ready for label:('parcellation',), 4 classes
+INFO:niftynet:2018-10-20 01:20:05,782: label mapping ready for inferred:('inferred',), 4 classes
+INFO:niftynet:2018-10-20 01:20:26,116: Cleaning up...
+INFO:niftynet:2018-10-20 01:20:26,116: SegmentationApplication stopped (time in second 20.33).

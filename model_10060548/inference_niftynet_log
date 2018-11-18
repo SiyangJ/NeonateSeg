@@ -1,0 +1,56 @@
+INFO:niftynet:2018-10-08 23:12:43,547: set initial_iter to 10000 based on checkpoints
+INFO:niftynet:2018-10-08 23:12:43,548: starting segmentation application
+INFO:niftynet:2018-10-08 23:12:43,548: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10060548/T2.csv" instead.
+INFO:niftynet:2018-10-08 23:12:43,549: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10060548/T2.csv".
+INFO:niftynet:2018-10-08 23:12:43,550: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_10060548/T2.csv, skipped filenames search
+INFO:niftynet:2018-10-08 23:12:43,564: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10060548/T1.csv" instead.
+INFO:niftynet:2018-10-08 23:12:43,565: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10060548/T1.csv".
+INFO:niftynet:2018-10-08 23:12:43,565: [T1] using existing csv file /proj/NIRAL/users/siyangj/model_10060548/T1.csv, skipped filenames search
+INFO:niftynet:2018-10-08 23:12:43,570: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10060548/parcellation.csv" instead.
+INFO:niftynet:2018-10-08 23:12:43,571: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10060548/parcellation.csv".
+INFO:niftynet:2018-10-08 23:12:43,571: [parcellation] using existing csv file /proj/NIRAL/users/siyangj/model_10060548/parcellation.csv, skipped filenames search
+WARNING:niftynet:2018-10-08 23:12:43,586: Loading from existing partitioning file /proj/NIRAL/users/siyangj/model_10060548/data_split, ignoring partitioning ratios.
+INFO:niftynet:2018-10-08 23:12:43,589: 
+
+Number of subjects 8, input section names: ['subject_id', 'T2', 'T1', 'parcellation']
+Dataset partitioning:
+-- training 6 cases (75.00%),
+-- validation 1 cases (12.50%),
+-- inference 1 cases (12.50%).
+
+INFO:niftynet:2018-10-08 23:12:43,852: Image reader: loading 1 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-10-08 23:12:43,889: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-10-08 23:12:43,889: label mapping ready for label:('parcellation',), 4 classes
+INFO:niftynet:2018-10-08 23:12:43,912: reading size of preprocessed inputs
+INFO:niftynet:2018-10-08 23:12:43,935: initialised window instance
+INFO:niftynet:2018-10-08 23:12:43,935: buffering with 32 windows
+INFO:niftynet:2018-10-08 23:12:43,939: initialised sampler output {'image': (1, 80, 80, 80, 1, 2), 'image_location': (1, 7)}
+INFO:niftynet:2018-10-08 23:12:43,958: Import [my_UNet3D] from /nas/longleaf/home/siyangj/niftynet/extensions/network/my_nets/my_unet.py.
+INFO:niftynet:2018-10-08 23:12:45,105: Starting preprocessing threads...
+INFO:niftynet:2018-10-08 23:12:45,105: New thread: 0
+INFO:niftynet:2018-10-08 23:12:45,105: filling queues (this can take a few minutes).
+INFO:niftynet:2018-10-08 23:12:45,290: starting from iter 10000
+INFO:niftynet:2018-10-08 23:12:45,290: Accessing /proj/NIRAL/users/siyangj/model_10060548/models/model.ckpt-10000
+INFO:niftynet:2018-10-08 23:12:45,434: Restoring parameters from /proj/NIRAL/users/siyangj/model_10060548/models/model.ckpt-10000
+INFO:niftynet:2018-10-08 23:12:45,696: grid sampling image sizes: {'image': (120, 104, 104, 1, 2)}
+INFO:niftynet:2018-10-08 23:12:45,696: grid sampling window sizes: {'image': (80, 80, 80, 1, 2)}
+INFO:niftynet:2018-10-08 23:12:45,696: yielding 27 locations from image, extended to 28 to be divisible by batch size 2
+INFO:niftynet:2018-10-08 23:14:35,810: inference iter 0,  (108.565159s)
+INFO:niftynet:2018-10-08 23:16:23,849: inference iter 1,  (108.036519s)
+INFO:niftynet:2018-10-08 23:18:11,914: inference iter 2,  (108.063724s)
+INFO:niftynet:2018-10-08 23:20:00,287: inference iter 3,  (108.370105s)
+INFO:niftynet:2018-10-08 23:21:48,119: inference iter 4,  (107.826081s)
+INFO:niftynet:2018-10-08 23:23:36,548: inference iter 5,  (108.427186s)
+INFO:niftynet:2018-10-08 23:25:24,370: inference iter 6,  (107.814988s)
+INFO:niftynet:2018-10-08 23:27:12,567: inference iter 7,  (108.188859s)
+INFO:niftynet:2018-10-08 23:29:00,584: inference iter 8,  (108.014215s)
+INFO:niftynet:2018-10-08 23:30:49,109: inference iter 9,  (108.522233s)
+INFO:niftynet:2018-10-08 23:32:37,233: inference iter 10,  (108.121408s)
+INFO:niftynet:2018-10-08 23:34:25,315: inference iter 11,  (108.080029s)
+INFO:niftynet:2018-10-08 23:36:13,372: inference iter 12,  (108.054316s)
+INFO:niftynet:2018-10-08 23:38:01,876: inference iter 13,  (108.501075s)
+INFO:niftynet:2018-10-08 23:39:49,832: inference iter 14,  (107.891693s)
+INFO:niftynet:2018-10-08 23:39:49,832: stopping -- event handler: OutputInterpreter.
+INFO:niftynet:2018-10-08 23:39:49,833: cleaning up...
+INFO:niftynet:2018-10-08 23:39:49,833: stopping sampling threads
+INFO:niftynet:2018-10-08 23:39:49,851: SegmentationApplication stopped (time in second 1624.75).

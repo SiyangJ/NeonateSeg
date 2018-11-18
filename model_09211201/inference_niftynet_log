@@ -1,0 +1,39 @@
+INFO:niftynet:2018-09-27 00:35:29,728: starting segmentation application
+INFO:niftynet:2018-09-27 00:35:29,728: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09211201/parcellation.csv" instead.
+INFO:niftynet:2018-09-27 00:35:29,729: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09211201/parcellation.csv".
+INFO:niftynet:2018-09-27 00:35:29,730: [parcellation] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_09211201/parcellation.csv
+INFO:niftynet:2018-09-27 00:35:29,738: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09211201/T2.csv" instead.
+INFO:niftynet:2018-09-27 00:35:29,739: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09211201/T2.csv".
+INFO:niftynet:2018-09-27 00:35:29,739: [T2] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_09211201/T2.csv
+INFO:niftynet:2018-09-27 00:35:29,747: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09211201/T1.csv" instead.
+INFO:niftynet:2018-09-27 00:35:29,748: Overwriting existing: "/proj/NIRAL/users/siyangj/model_09211201/T1.csv".
+INFO:niftynet:2018-09-27 00:35:29,748: [T1] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_09211201/T1.csv
+WARNING:niftynet:2018-09-27 00:35:29,756: Loading from existing partitioning file /proj/NIRAL/users/siyangj/model_09211201/data_split, ignoring partitioning ratios.
+INFO:niftynet:2018-09-27 00:35:29,759: 
+
+Number of subjects 16, input section names: ['subject_id', 'parcellation', 'T2', 'T1']
+Dataset partitioning:
+-- training 12 cases (75.00%),
+-- validation 2 cases (12.50%),
+-- inference 2 cases (12.50%).
+
+INFO:niftynet:2018-09-27 00:35:30,124: Image reader: loading 2 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-27 00:35:30,129: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-27 00:35:30,129: label mapping ready for label:('parcellation',), 4 classes
+INFO:niftynet:2018-09-27 00:35:35,996: reading size of preprocessed inputs
+INFO:niftynet:2018-09-27 00:35:36,025: initialised window instance
+INFO:niftynet:2018-09-27 00:35:36,025: buffering with 32 windows
+INFO:niftynet:2018-09-27 00:35:36,029: initialised sampler output {'image_location': (1, 7), 'image': (1, 96, 96, 96, 1, 2)}
+INFO:niftynet:2018-09-27 00:35:37,159: starting from iter 100
+INFO:niftynet:2018-09-27 00:35:37,160: Accessing /proj/NIRAL/users/siyangj/model_09211201/models/model.ckpt-100
+INFO:niftynet:2018-09-27 00:35:37,252: Restoring parameters from /proj/NIRAL/users/siyangj/model_09211201/models/model.ckpt-100
+INFO:niftynet:2018-09-27 00:35:38,885: Starting preprocessing threads...
+INFO:niftynet:2018-09-27 00:35:38,886: New thread: 0
+INFO:niftynet:2018-09-27 00:35:38,886: filling queues (this can take a few minutes).
+INFO:niftynet:2018-09-27 00:35:41,186: grid sampling image sizes: {'image': (144, 120, 136, 1, 2)}
+INFO:niftynet:2018-09-27 00:35:41,186: grid sampling window sizes: {'image': (96, 96, 96, 1, 2)}
+INFO:niftynet:2018-09-27 00:35:41,186: yielding 27 locations from image
+INFO:niftynet:2018-09-27 00:35:46,260: inference iter 0,  (7.222356s)
+CRITICAL:niftynet:2018-09-27 00:35:46,261: network output window can be cropped by specifying the border parameter in config file, but here the output window (8, 8, 8) is already smaller than the input window size minus padding: [96 96 96], not supported by this aggregator
+INFO:niftynet:2018-09-27 00:35:46,262: cleaning up...
+INFO:niftynet:2018-09-27 00:35:46,262: stopping sampling threads

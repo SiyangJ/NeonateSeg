@@ -1,0 +1,89 @@
+CRITICAL:niftynet:2018-10-12 02:35:36,170: Failed to get iteration number from checkpoint path (/proj/NIRAL/users/siyangj/model_09270330_test/models),
+please check config parameter: model_dir, and initial_iter
+INFO:niftynet:2018-10-12 02:37:03,394: starting segmentation application
+INFO:niftynet:2018-10-12 02:37:03,395: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09270330_test/T2.csv" instead.
+INFO:niftynet:2018-10-12 02:37:03,395: [T2] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_09270330_test/T2.csv
+INFO:niftynet:2018-10-12 02:37:03,404: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09270330_test/T1.csv" instead.
+INFO:niftynet:2018-10-12 02:37:03,404: [T1] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_09270330_test/T1.csv
+INFO:niftynet:2018-10-12 02:37:03,413: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_09270330_test/parcellation.csv" instead.
+INFO:niftynet:2018-10-12 02:37:03,413: [parcellation] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_09270330_test/parcellation.csv
+INFO:niftynet:2018-10-12 02:37:03,427: 
+
+Number of subjects 8, input section names: ['subject_id', 'T2', 'T1', 'parcellation']
+Dataset partitioning:
+-- training 6 cases (75.00%),
+-- validation 1 cases (12.50%),
+-- inference 1 cases (12.50%).
+
+INFO:niftynet:2018-10-12 02:37:03,852: Image reader: loading 6 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-10-12 02:37:03,852: Image reader: loading 6 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-10-12 02:37:03,900: Image reader: loading 1 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-10-12 02:37:03,900: Image reader: loading 1 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-10-12 02:37:03,925: training normalisation histogram references for image:{'T2', 'T1'}, using 6 subjects
+INFO:niftynet:2018-10-12 02:37:07,049: Looking for the set of unique discrete labels from input label using 6 subjects
+WARNING:niftynet:2018-10-12 02:37:07,307: moved existing histogram reference file
+ from /proj/NIRAL/users/siyangj/model_09270330_test/hist_ref.txt to /proj/NIRAL/users/siyangj/model_09270330_test/hist_ref.txt.backup
+INFO:niftynet:2018-10-12 02:37:07,312: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-10-12 02:37:07,312: label mapping ready for label:('parcellation',), 4 classes
+INFO:niftynet:2018-10-12 02:37:15,808: reading size of preprocessed images
+INFO:niftynet:2018-10-12 02:37:15,825: initialised window instance
+INFO:niftynet:2018-10-12 02:37:15,826: buffering with 32 windows
+INFO:niftynet:2018-10-12 02:37:15,831: initialised sampler output {'label': (64, 112, 96, 96, 1, 1), 'image': (64, 112, 96, 96, 1, 2), 'image_location': (64, 7), 'label_location': (64, 7)} 
+INFO:niftynet:2018-10-12 02:37:15,831: reading size of preprocessed images
+INFO:niftynet:2018-10-12 02:37:15,862: initialised window instance
+INFO:niftynet:2018-10-12 02:37:15,862: buffering with 32 windows
+INFO:niftynet:2018-10-12 02:37:15,866: initialised sampler output {'label': (64, 112, 96, 96, 1, 1), 'image': (64, 112, 96, 96, 1, 2), 'image_location': (64, 7), 'label_location': (64, 7)} 
+INFO:niftynet:2018-10-12 02:37:15,874: Import [my_UNet3D] from /nas/longleaf/home/siyangj/niftynet/extensions/network/my_nets/my_unet.py.
+INFO:niftynet:2018-10-12 02:37:16,993: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-10-12 02:37:19,438: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-10-12 02:37:21,783: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-10-12 02:37:24,165: Cross entropy loss function calls tf.nn.sparse_softmax_cross_entropy_with_logits which always performs a softmax internally.
+INFO:niftynet:2018-10-12 02:37:30,173: Starting preprocessing threads...
+INFO:niftynet:2018-10-12 02:37:30,174: New thread: 0
+INFO:niftynet:2018-10-12 02:37:30,175: New thread: 1
+INFO:niftynet:2018-10-12 02:37:30,176: New thread: 2
+INFO:niftynet:2018-10-12 02:37:30,177: New thread: 3
+INFO:niftynet:2018-10-12 02:37:30,177: Starting preprocessing threads...
+INFO:niftynet:2018-10-12 02:37:30,181: New thread: 0
+INFO:niftynet:2018-10-12 02:37:30,183: New thread: 1
+INFO:niftynet:2018-10-12 02:37:30,189: New thread: 2
+INFO:niftynet:2018-10-12 02:37:30,191: New thread: 3
+INFO:niftynet:2018-10-12 02:37:30,191: filling queues (this can take a few minutes).
+INFO:niftynet:2018-10-12 02:37:55,332: Parameters from random initialisations ...
+INFO:niftynet:2018-10-12 02:39:28,774: training iter 1, loss_2=1.5063159465789795, loss_1=1.5063159465789795, loss_3=1.5063159465789795, loss=1.5063159465789795 (38.756780s)
+INFO:niftynet:2018-10-12 02:39:32,001: training iter 2, loss_2=1.4750759601593018, loss_1=1.4750759601593018, loss_3=1.4750759601593018, loss=1.4750759601593018 (3.226060s)
+INFO:niftynet:2018-10-12 02:39:35,290: training iter 3, loss_2=1.4450215101242065, loss_1=1.4450215101242065, loss_3=1.4450215101242065, loss=1.4450215101242065 (3.288143s)
+INFO:niftynet:2018-10-12 02:39:38,927: training iter 4, loss_2=1.4159621000289917, loss_1=1.4159621000289917, loss_3=1.4159621000289917, loss=1.4159621000289917 (3.636775s)
+INFO:niftynet:2018-10-12 02:39:48,368: training iter 5, loss_2=1.3878345489501953, loss_1=1.402484655380249, loss_3=1.3878345489501953, loss=1.3878345489501953 (9.439942s)
+INFO:niftynet:2018-10-12 02:39:51,848: training iter 6, loss_2=1.360821008682251, loss_1=1.3732380867004395, loss_3=1.37323796749115, loss=1.3732380867004395 (3.479507s)
+INFO:niftynet:2018-10-12 02:39:55,529: training iter 7, loss_2=1.3482733964920044, loss_1=1.3482733964920044, loss_3=1.3482733964920044, loss=1.355946660041809 (3.679917s)
+INFO:niftynet:2018-10-12 02:39:58,831: training iter 8, loss_2=1.3326094150543213, loss_1=1.3238110542297363, loss_3=1.3238110542297363, loss=1.311318278312683 (3.301257s)
+INFO:niftynet:2018-10-12 02:40:02,384: training iter 9, loss_2=1.2886227369308472, loss_1=1.3098267316818237, loss_3=1.300372838973999, loss=1.300372838973999 (3.552743s)
+INFO:niftynet:2018-10-12 02:40:05,964: training iter 10, loss_2=1.2879832983016968, loss_1=1.2781565189361572, loss_3=1.2879832983016968, loss=1.2879832983016968 (3.579072s)
+INFO:niftynet:2018-10-12 02:40:09,834: training iter 11, loss_2=1.266972303390503, loss_1=1.266972303390503, loss_3=1.2574689388275146, loss=1.266972303390503 (3.868544s)
+INFO:niftynet:2018-10-12 02:40:14,538: training iter 12, loss_2=1.247168779373169, loss_1=1.247168779373169, loss_3=1.238356351852417, loss=1.247168779373169 (4.703141s)
+INFO:niftynet:2018-10-12 02:40:21,641: training iter 13, loss_2=1.2288461923599243, loss_1=1.219397783279419, loss_3=1.226151943206787, loss=1.2288461923599243 (7.102859s)
+INFO:niftynet:2018-10-12 02:40:25,144: training iter 14, loss_2=1.2046830654144287, loss_1=1.2096192836761475, loss_3=1.2046830654144287, loss=1.203368902206421 (3.502280s)
+INFO:niftynet:2018-10-12 02:40:28,446: training iter 15, loss_2=1.1938467025756836, loss_1=1.1943542957305908, loss_3=1.1972360610961914, loss=1.1829822063446045 (3.301198s)
+INFO:niftynet:2018-10-12 02:40:31,909: training iter 16, loss_2=1.1837031841278076, loss_1=1.179335117340088, loss_3=1.1803457736968994, loss=1.179335117340088 (3.461804s)
+INFO:niftynet:2018-10-12 02:40:35,328: training iter 17, loss_2=1.1674444675445557, loss_1=1.1657521724700928, loss_3=1.1674444675445557, loss=1.1674445867538452 (3.418415s)
+INFO:niftynet:2018-10-12 02:40:38,524: training iter 18, loss_2=1.1554701328277588, loss_1=1.1531522274017334, loss_3=1.1531522274017334, loss=1.1531522274017334 (3.196145s)
+INFO:niftynet:2018-10-12 02:40:42,587: training iter 19, loss_2=1.144437313079834, loss_1=1.1412566900253296, loss_3=1.1412566900253296, loss=1.1412566900253296 (4.061309s)
+INFO:niftynet:2018-10-12 02:40:52,960: training iter 20, loss_2=1.1301013231277466, loss_1=1.1301013231277466, loss_3=1.1342566013336182, loss=1.1342566013336182 (10.372853s)
+INFO:niftynet:2018-10-12 02:40:59,311:     validation iter 20, loss_2=1.1052677631378174, loss_1=1.1052677631378174, loss_3=1.1052677631378174, loss=1.1052677631378174 (6.327669s)
+INFO:niftynet:2018-10-12 02:41:03,300: training iter 21, loss_2=1.1197274923324585, loss_1=1.1197274923324585, loss_3=1.1197274923324585, loss=1.1247684955596924 (3.989010s)
+INFO:niftynet:2018-10-12 02:41:06,646: training iter 22, loss_2=1.1099607944488525, loss_1=1.1234667301177979, loss_3=1.117598295211792, loss=1.1223446130752563 (3.344834s)
+INFO:niftynet:2018-10-12 02:41:10,129: training iter 23, loss_2=1.1144754886627197, loss_1=1.108915090560913, loss_3=1.1144757270812988, loss=1.108915090560913 (3.483104s)
+INFO:niftynet:2018-10-12 02:41:13,606: training iter 24, loss_2=1.100724697113037, loss_1=1.100724697113037, loss_3=1.100724697113037, loss=1.107277750968933 (3.475684s)
+INFO:niftynet:2018-10-12 02:41:17,014: training iter 25, loss_2=1.0926084518432617, loss_1=1.092925786972046, loss_3=1.092925786972046, loss=1.092925786972046 (3.406708s)
+INFO:niftynet:2018-10-12 02:41:20,945: training iter 26, loss_2=1.09230375289917, loss_1=1.0855231285095215, loss_3=1.09230375289917, loss=1.09230375289917 (3.930059s)
+INFO:niftynet:2018-10-12 02:41:24,690: training iter 27, loss_2=1.0851505994796753, loss_1=1.0851505994796753, loss_3=1.0851505994796753, loss=1.0851505994796753 (3.745004s)
+INFO:niftynet:2018-10-12 02:41:30,703: training iter 28, loss_2=1.0719480514526367, loss_1=1.0781831741333008, loss_3=1.0781831741333008, loss=1.0781831741333008 (6.012373s)
+INFO:niftynet:2018-10-12 02:41:37,811: training iter 29, loss_2=1.065732479095459, loss_1=1.065732717514038, loss_3=1.058754563331604, loss=1.065841794013977 (7.095840s)
+INFO:niftynet:2018-10-12 02:41:41,205: training iter 30, loss_2=1.0666561126708984, loss_1=1.0653637647628784, loss_3=1.0653637647628784, loss=1.0666561126708984 (3.393199s)
+INFO:niftynet:2018-10-12 02:41:44,664: training iter 31, loss_2=1.0610060691833496, loss_1=1.0621349811553955, loss_3=1.059485673904419, loss=1.0621349811553955 (3.458339s)
+INFO:niftynet:2018-10-12 02:41:47,946: training iter 32, loss_2=1.056840181350708, loss_1=1.056840181350708, loss_3=1.056840181350708, loss=1.0555987358093262 (3.282006s)
+INFO:niftynet:2018-10-12 02:41:51,289: training iter 33, loss_2=1.050431728363037, loss_1=1.050431728363037, loss_3=1.0516667366027832, loss=1.0516667366027832 (3.340604s)
+INFO:niftynet:2018-10-12 02:41:54,673: training iter 34, loss_2=1.0455195903778076, loss_1=1.0466660261154175, loss_3=1.0455195903778076, loss=1.0455195903778076 (3.383743s)
+INFO:niftynet:2018-10-12 02:41:58,170: training iter 35, loss_2=1.040851354598999, loss_1=1.040851354598999, loss_3=1.0418872833251953, loss=1.040851354598999 (3.496164s)
+INFO:niftynet:2018-10-12 02:42:02,050: training iter 36, loss_2=1.0364210605621338, loss_1=1.0373260974884033, loss_3=1.0373260974884033, loss=1.0364210605621338 (3.879038s)

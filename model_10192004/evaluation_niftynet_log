@@ -1,0 +1,46 @@
+INFO:niftynet:2018-10-20 12:11:28,642: starting segmentation application
+INFO:niftynet:2018-10-20 12:11:28,642: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/T2.csv" instead.
+INFO:niftynet:2018-10-20 12:11:28,643: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/T2.csv".
+INFO:niftynet:2018-10-20 12:11:28,644: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/T2.csv, skipped filenames search
+INFO:niftynet:2018-10-20 12:11:28,648: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/parcellation.csv" instead.
+INFO:niftynet:2018-10-20 12:11:28,649: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/parcellation.csv".
+INFO:niftynet:2018-10-20 12:11:28,649: [parcellation] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/parcellation.csv, skipped filenames search
+INFO:niftynet:2018-10-20 12:11:28,654: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/T1.csv" instead.
+INFO:niftynet:2018-10-20 12:11:28,655: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/T1.csv".
+INFO:niftynet:2018-10-20 12:11:28,655: [T1] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/T1.csv, skipped filenames search
+INFO:niftynet:2018-10-20 12:11:28,660: `csv_file = /proj/NIRAL/users/siyangj/model_10192004/inference_2900/inferred.csv` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/inferred.csv" instead.
+INFO:niftynet:2018-10-20 12:11:28,660: [inferred] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/inferred.csv, skipped filenames search
+CRITICAL:niftynet:2018-10-20 12:11:28,661: [inferred] csv file /proj/NIRAL/users/siyangj/model_10192004/inferred.csv not found.
+INFO:niftynet:2018-10-20 17:59:25,194: starting segmentation application
+INFO:niftynet:2018-10-20 17:59:25,194: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/T2.csv" instead.
+INFO:niftynet:2018-10-20 17:59:25,194: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/T2.csv".
+INFO:niftynet:2018-10-20 17:59:25,195: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/T2.csv, skipped filenames search
+INFO:niftynet:2018-10-20 17:59:25,200: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/parcellation.csv" instead.
+INFO:niftynet:2018-10-20 17:59:25,200: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/parcellation.csv".
+INFO:niftynet:2018-10-20 17:59:25,200: [parcellation] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/parcellation.csv, skipped filenames search
+INFO:niftynet:2018-10-20 17:59:25,206: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/T1.csv" instead.
+INFO:niftynet:2018-10-20 17:59:25,206: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/T1.csv".
+INFO:niftynet:2018-10-20 17:59:25,206: [T1] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/T1.csv, skipped filenames search
+INFO:niftynet:2018-10-20 17:59:25,212: `csv_file = /proj/NIRAL/users/siyangj/model_10192004/inference_4000/inferred.csv` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/inferred.csv" instead.
+INFO:niftynet:2018-10-20 17:59:25,212: [inferred] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/inferred.csv, skipped filenames search
+CRITICAL:niftynet:2018-10-20 17:59:25,212: [inferred] csv file /proj/NIRAL/users/siyangj/model_10192004/inferred.csv not found.
+INFO:niftynet:2018-10-20 21:59:42,508: starting segmentation application
+INFO:niftynet:2018-10-20 21:59:42,508: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/T2.csv" instead.
+INFO:niftynet:2018-10-20 21:59:42,508: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/T2.csv".
+INFO:niftynet:2018-10-20 21:59:42,509: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/T2.csv, skipped filenames search
+INFO:niftynet:2018-10-20 21:59:42,513: `csv_file = /proj/NIRAL/users/siyangj/model_10192004/inference_6600/inferred.csv` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/inferred.csv" instead.
+INFO:niftynet:2018-10-20 21:59:42,514: [inferred] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/inferred.csv, skipped filenames search
+CRITICAL:niftynet:2018-10-20 21:59:42,514: [inferred] csv file /proj/NIRAL/users/siyangj/model_10192004/inferred.csv not found.
+INFO:niftynet:2018-10-21 03:12:24,737: starting segmentation application
+INFO:niftynet:2018-10-21 03:12:24,737: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/parcellation.csv" instead.
+INFO:niftynet:2018-10-21 03:12:24,738: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/parcellation.csv".
+INFO:niftynet:2018-10-21 03:12:24,738: [parcellation] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/parcellation.csv, skipped filenames search
+INFO:niftynet:2018-10-21 03:12:24,743: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/T1.csv" instead.
+INFO:niftynet:2018-10-21 03:12:24,744: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/T1.csv".
+INFO:niftynet:2018-10-21 03:12:24,744: [T1] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/T1.csv, skipped filenames search
+INFO:niftynet:2018-10-21 03:12:24,749: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/T2.csv" instead.
+INFO:niftynet:2018-10-21 03:12:24,750: Overwriting existing: "/proj/NIRAL/users/siyangj/model_10192004/T2.csv".
+INFO:niftynet:2018-10-21 03:12:24,750: [T2] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/T2.csv, skipped filenames search
+INFO:niftynet:2018-10-21 03:12:24,755: `csv_file = /proj/NIRAL/users/siyangj/model_10192004/inference_11100/inferred.csv` not found, writing to "/proj/NIRAL/users/siyangj/model_10192004/inferred.csv" instead.
+INFO:niftynet:2018-10-21 03:12:24,755: [inferred] using existing csv file /proj/NIRAL/users/siyangj/model_10192004/inferred.csv, skipped filenames search
+CRITICAL:niftynet:2018-10-21 03:12:24,756: [inferred] csv file /proj/NIRAL/users/siyangj/model_10192004/inferred.csv not found.

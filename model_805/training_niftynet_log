@@ -1,0 +1,100 @@
+INFO:niftynet:2018-09-11 00:08:51,357: starting segmentation application
+INFO:niftynet:2018-09-11 00:08:51,357: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_805/parcellation.csv" instead.
+INFO:niftynet:2018-09-11 00:08:51,357: [parcellation] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_805/parcellation.csv
+INFO:niftynet:2018-09-11 00:08:51,367: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_805/T2.csv" instead.
+INFO:niftynet:2018-09-11 00:08:51,367: [T2] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_805/T2.csv
+INFO:niftynet:2018-09-11 00:08:51,375: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_805/T1.csv" instead.
+INFO:niftynet:2018-09-11 00:08:51,375: [T1] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_805/T1.csv
+INFO:niftynet:2018-09-11 00:08:51,391: 
+
+Number of subjects 16, input section names: ['subject_id', 'parcellation', 'T2', 'T1']
+Dataset partitioning:
+-- training 12 cases (75.00%),
+-- validation 2 cases (12.50%),
+-- inference 2 cases (12.50%).
+
+INFO:niftynet:2018-09-11 00:08:52,521: Image reader: loading 12 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-11 00:08:52,521: Image reader: loading 12 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-11 00:08:52,661: Image reader: loading 2 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-11 00:08:52,661: Image reader: loading 2 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-11 00:08:52,717: training normalisation histogram references for image:{'T2', 'T1'}, using 12 subjects
+INFO:niftynet:2018-09-11 00:09:01,554: Looking for the set of unique discrete labels from input label using 12 subjects
+WARNING:niftynet:2018-09-11 00:09:02,409: unusual discrete values: number of unique labels to normalise 277150
+WARNING:niftynet:2018-09-11 00:09:02,986: unusual discrete values: number of unique labels to normalise 281148
+WARNING:niftynet:2018-09-11 00:09:03,571: unusual discrete values: number of unique labels to normalise 282006
+WARNING:niftynet:2018-09-11 00:09:04,199: unusual discrete values: number of unique labels to normalise 273657
+WARNING:niftynet:2018-09-11 00:09:04,796: unusual discrete values: number of unique labels to normalise 279646
+WARNING:niftynet:2018-09-11 00:09:05,400: unusual discrete values: number of unique labels to normalise 279904
+WARNING:niftynet:2018-09-11 00:09:06,041: moved existing histogram reference file
+ from /proj/NIRAL/users/siyangj/model_805/hist_ref.txt to /proj/NIRAL/users/siyangj/model_805/hist_ref.txt.backup
+INFO:niftynet:2018-09-11 00:09:06,738: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-11 00:09:06,739: label mapping ready for label:('parcellation',), 881891 classes
+INFO:niftynet:2018-09-11 00:09:15,293: reading size of preprocessed images
+INFO:niftynet:2018-09-11 00:09:15,314: initialised window instance
+INFO:niftynet:2018-09-11 00:09:15,314: buffering with 5 windows
+INFO:niftynet:2018-09-11 00:09:15,319: initialised sampler output {'label_location': (32, 7), 'label': (32, 80, 80, 80, 1, 1), 'image_location': (32, 7), 'image': (32, 80, 80, 80, 1, 2)} 
+INFO:niftynet:2018-09-11 00:09:15,319: reading size of preprocessed images
+INFO:niftynet:2018-09-11 00:09:15,359: initialised window instance
+INFO:niftynet:2018-09-11 00:09:15,359: buffering with 5 windows
+INFO:niftynet:2018-09-11 00:09:15,363: initialised sampler output {'label_location': (32, 7), 'label': (32, 80, 80, 80, 1, 1), 'image_location': (32, 7), 'image': (32, 80, 80, 80, 1, 2)} 
+INFO:niftynet:2018-09-11 00:09:15,420: Import [my_UNet3D] from /nas/longleaf/home/siyangj/niftynet/extensions/network/my_nets/my_unet.py.
+INFO:niftynet:2018-09-11 00:09:29,053: Starting preprocessing threads...
+INFO:niftynet:2018-09-11 00:09:29,053: New thread: 0
+INFO:niftynet:2018-09-11 00:09:29,053: New thread: 1
+INFO:niftynet:2018-09-11 00:09:29,054: New thread: 2
+INFO:niftynet:2018-09-11 00:09:29,055: New thread: 3
+INFO:niftynet:2018-09-11 00:09:29,057: Starting preprocessing threads...
+INFO:niftynet:2018-09-11 00:09:29,058: New thread: 0
+INFO:niftynet:2018-09-11 00:09:29,059: New thread: 1
+INFO:niftynet:2018-09-11 00:09:29,061: New thread: 2
+INFO:niftynet:2018-09-11 00:09:29,063: filling queues (this can take a few minutes).
+INFO:niftynet:2018-09-11 00:09:29,062: New thread: 3
+INFO:niftynet:2018-09-11 00:09:36,372: Parameters from random initialisations ...
+INFO:niftynet:2018-09-11 00:41:33,352: starting segmentation application
+INFO:niftynet:2018-09-11 00:41:33,353: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_805/T2.csv" instead.
+INFO:niftynet:2018-09-11 00:41:33,353: Overwriting existing: "/proj/NIRAL/users/siyangj/model_805/T2.csv".
+INFO:niftynet:2018-09-11 00:41:33,354: [T2] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_805/T2.csv
+INFO:niftynet:2018-09-11 00:41:33,362: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_805/T1.csv" instead.
+INFO:niftynet:2018-09-11 00:41:33,362: Overwriting existing: "/proj/NIRAL/users/siyangj/model_805/T1.csv".
+INFO:niftynet:2018-09-11 00:41:33,362: [T1] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_805/T1.csv
+INFO:niftynet:2018-09-11 00:41:33,370: `csv_file = ` not found, writing to "/proj/NIRAL/users/siyangj/model_805/parcellation.csv" instead.
+INFO:niftynet:2018-09-11 00:41:33,370: Overwriting existing: "/proj/NIRAL/users/siyangj/model_805/parcellation.csv".
+INFO:niftynet:2018-09-11 00:41:33,370: [parcellation] search file folders, writing csv file /proj/NIRAL/users/siyangj/model_805/parcellation.csv
+WARNING:niftynet:2018-09-11 00:41:33,378: Loading from existing partitioning file /proj/NIRAL/users/siyangj/model_805/data_split, ignoring partitioning ratios.
+INFO:niftynet:2018-09-11 00:41:33,381: 
+
+Number of subjects 16, input section names: ['subject_id', 'T2', 'T1', 'parcellation']
+Dataset partitioning:
+-- training 12 cases (75.00%),
+-- validation 2 cases (12.50%),
+-- inference 2 cases (12.50%).
+
+INFO:niftynet:2018-09-11 00:41:34,591: Image reader: loading 12 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-11 00:41:34,591: Image reader: loading 12 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-11 00:41:34,732: Image reader: loading 2 subjects from sections ('T1', 'T2') as input [image]
+INFO:niftynet:2018-09-11 00:41:34,732: Image reader: loading 2 subjects from sections ('parcellation',) as input [label]
+INFO:niftynet:2018-09-11 00:41:35,994: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-11 00:41:35,996: label mapping ready for label:('parcellation',), 881891 classes
+INFO:niftynet:2018-09-11 00:41:35,996: normalisation histogram reference models ready for image:('T1', 'T2')
+INFO:niftynet:2018-09-11 00:41:35,996: label mapping ready for label:('parcellation',), 881891 classes
+INFO:niftynet:2018-09-11 00:41:44,577: reading size of preprocessed images
+INFO:niftynet:2018-09-11 00:41:44,629: initialised window instance
+INFO:niftynet:2018-09-11 00:41:44,630: buffering with 5 windows
+INFO:niftynet:2018-09-11 00:41:44,634: initialised sampler output {'image': (32, 80, 80, 80, 1, 2), 'image_location': (32, 7), 'label_location': (32, 7), 'label': (32, 80, 80, 80, 1, 1)} 
+INFO:niftynet:2018-09-11 00:41:44,635: reading size of preprocessed images
+INFO:niftynet:2018-09-11 00:41:44,671: initialised window instance
+INFO:niftynet:2018-09-11 00:41:44,672: buffering with 5 windows
+INFO:niftynet:2018-09-11 00:41:44,675: initialised sampler output {'image': (32, 80, 80, 80, 1, 2), 'image_location': (32, 7), 'label_location': (32, 7), 'label': (32, 80, 80, 80, 1, 1)} 
+INFO:niftynet:2018-09-11 00:41:44,701: Import [my_UNet3D] from /nas/longleaf/home/siyangj/niftynet/extensions/network/my_nets/my_unet.py.
+INFO:niftynet:2018-09-11 00:41:59,655: Parameters from random initialisations ...
+INFO:niftynet:2018-09-11 00:41:59,791: Starting preprocessing threads...
+INFO:niftynet:2018-09-11 00:41:59,793: New thread: 0
+INFO:niftynet:2018-09-11 00:41:59,793: New thread: 1
+INFO:niftynet:2018-09-11 00:41:59,795: New thread: 2
+INFO:niftynet:2018-09-11 00:41:59,796: New thread: 3
+INFO:niftynet:2018-09-11 00:41:59,798: Starting preprocessing threads...
+INFO:niftynet:2018-09-11 00:41:59,799: New thread: 0
+INFO:niftynet:2018-09-11 00:41:59,800: New thread: 1
+INFO:niftynet:2018-09-11 00:41:59,803: New thread: 2
+INFO:niftynet:2018-09-11 00:41:59,803: New thread: 3
+INFO:niftynet:2018-09-11 00:41:59,804: filling queues (this can take a few minutes).

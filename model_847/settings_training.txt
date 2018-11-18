@@ -1,0 +1,113 @@
+Input params at 2018-09-11 01:37:45.
+[T1]
+-- filename_contains: ()
+-- axcodes: ('A', 'R', 'S')
+-- filename_not_contains: ()
+-- path_to_search: /proj/NIRAL/users/siyangj/myData/normal/T1
+-- csv_file: 
+-- spatial_window_size: (80, 80, 80)
+-- interp_order: 2
+-- loader: None
+-- pixdim: (1.0, 1.0, 1.0)
+[CUSTOM]
+-- min_sampling_ratio: 0
+-- num_classes: 4
+-- softmax: True
+-- inferred: ()
+-- compulsory_labels: (0, 1)
+-- sampler: ()
+-- evaluation_units: foreground
+-- weight: ()
+-- output_prob: False
+-- label: ('parcellation',)
+-- image: ('T1', 'T2')
+-- label_normalisation: True
+-- rand_samples: 0
+-- name: net_segment
+-- min_numb_labels: 1
+-- proba_connect: True
+[PARCELLATION]
+-- filename_contains: ()
+-- axcodes: ('A', 'R', 'S')
+-- filename_not_contains: ()
+-- path_to_search: /proj/NIRAL/users/siyangj/myData/normal/seg
+-- csv_file: 
+-- spatial_window_size: (80, 80, 80)
+-- interp_order: 2
+-- loader: None
+-- pixdim: (1.0, 1.0, 1.0)
+[T2]
+-- filename_contains: ()
+-- axcodes: ('A', 'R', 'S')
+-- filename_not_contains: ()
+-- path_to_search: /proj/NIRAL/users/siyangj/myData/normal/T2
+-- csv_file: 
+-- spatial_window_size: (80, 80, 80)
+-- interp_order: 2
+-- loader: None
+-- pixdim: (1.0, 1.0, 1.0)
+[CONFIG_FILE]
+-- path: /nas/longleaf/home/siyangj/myNIRAL/my_unet_normal.ini
+[NETWORK]
+-- batch_size: 2
+-- volume_padding_size: (16, 16, 16)
+-- window_sampling: uniform
+-- histogram_ref_file: hist_ref.txt
+-- volume_padding_mode: minimum
+-- weight_initializer: he_normal
+-- reg_type: L2
+-- whitening: True
+-- queue_length: 5
+-- multimod_foreground_type: and
+-- bias_initializer: zeros
+-- normalisation: True
+-- foreground_type: otsu_plus
+-- normalise_foreground_only: True
+-- decay: 0.0
+-- name: my_nets.my_unet.my_UNet3D
+-- activation_function: relu
+-- cutoff: (0.01, 0.99)
+-- norm_type: percentile
+-- keep_prob: 1.0
+[INFERENCE]
+-- border: (48, 48, 48)
+-- inference_iter: 100
+-- dataset_to_infer: 
+-- output_postfix: _niftynet_out
+-- spatial_window_size: (120, 120, 120)
+-- output_interp_order: 2
+-- save_seg_dir: /proj/NIRAL/users/siyangj/unet_847
+[SYSTEM]
+-- cuda_devices: ""
+-- event_handler: ('model_saver', 'model_restorer', 'sampler_threading', 'apply_gradients', 'output_interpreter', 'console_logger', 'tensorboard_logger')
+-- iteration_generator: iteration_generator
+-- dataset_split_file: data_split
+-- num_gpus: 4
+-- model_dir: /proj/NIRAL/users/siyangj/model_847
+-- num_threads: 4
+-- loader: SimpleITK
+-- action: training
+[TRAINING]
+-- exclude_fraction_for_inference: 0.1
+-- exclude_fraction_for_validation: 0.1
+-- rotation_angle: (-10.0, 10.0)
+-- lr: 0.01
+-- rotation_angle_z: ()
+-- max_iter: 5000
+-- validation_every_n: 10
+-- scaling_percentage: (-10.0, 10.0)
+-- proportion_to_deform: 0.9
+-- rotation_angle_x: ()
+-- random_flipping_axes: (0, 1)
+-- save_every_n: 20
+-- loss_type: Dice
+-- deformation_sigma: 10.0
+-- optimiser: adam
+-- num_ctrl_points: 6
+-- validation_max_iter: 1
+-- do_elastic_deformation: True
+-- sample_per_volume: 10
+-- rotation_angle_y: ()
+-- starting_iter: 0
+-- max_checkpoints: 1000
+-- tensorboard_every_n: 20

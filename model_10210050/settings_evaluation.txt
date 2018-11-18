@@ -1,0 +1,116 @@
+Input params at 2018-10-22 02:32:36.
+[CUSTOM]
+-- sampler: ()
+-- compulsory_labels: (0, 1)
+-- inferred: ()
+-- min_sampling_ratio: 0
+-- softmax: True
+-- evaluation_units: foreground
+-- output_prob: False
+-- label: ('parcellation',)
+-- min_numb_labels: 1
+-- weight: ()
+-- rand_samples: 0
+-- num_classes: 4
+-- label_normalisation: True
+-- name: net_segment
+-- proba_connect: True
+-- image: ('T1', 'T2')
+[T1]
+-- filename_contains: None
+-- pixdim: (1.0, 1.0, 1.0)
+-- filename_not_contains: ()
+-- csv_file: 
+-- interp_order: 3
+-- loader: None
+-- axcodes: ('A', 'R', 'S')
+-- spatial_window_size: (32, 32, 32)
+-- path_to_search: 
+[T2]
+-- filename_contains: None
+-- pixdim: (1.0, 1.0, 1.0)
+-- filename_not_contains: ()
+-- csv_file: 
+-- interp_order: 3
+-- loader: None
+-- axcodes: ('A', 'R', 'S')
+-- spatial_window_size: (32, 32, 32)
+-- path_to_search: 
+[PARCELLATION]
+-- filename_contains: None
+-- pixdim: (1.0, 1.0, 1.0)
+-- filename_not_contains: ()
+-- csv_file: 
+-- interp_order: 0
+-- loader: None
+-- axcodes: ('A', 'R', 'S')
+-- spatial_window_size: (32, 32, 32)
+-- path_to_search: 
+[CONFIG_FILE]
+-- path: /nas/longleaf/home/siyangj/myNIRAL/10210050.ini
+[EVALUATION]
+-- save_csv_dir: eval_60000
+-- evaluations: Dice,Jaccard,hausdorff95_distance
+[INFERENCE]
+-- output_interp_order: 2
+-- border: (0, 0, 0)
+-- output_postfix: _niftynet_out
+-- save_seg_dir: inference_60000
+-- inference_iter: 60000
+-- spatial_window_size: (32, 32, 32)
+-- dataset_to_infer: all
+[NETWORK]
+-- batch_size: 2
+-- reg_type: L2
+-- volume_padding_size: (0, 0, 0)
+-- queue_length: 32
+-- normalise_foreground_only: True
+-- weight_initializer: he_normal
+-- volume_padding_mode: minimum
+-- window_sampling: uniform
+-- normalisation: True
+-- multimod_foreground_type: and
+-- histogram_ref_file: hist_ref.txt
+-- bias_initializer: zeros
+-- keep_prob: 0.8
+-- decay: 5e-05
+-- foreground_type: otsu_plus
+-- name: my_nets.my_unet.my_UNet3D
+-- cutoff: (0.01, 0.99)
+-- norm_type: percentile
+-- activation_function: relu
+-- whitening: True
+[SYSTEM]
+-- iteration_generator: iteration_generator
+-- cuda_devices: ""
+-- loader: SimpleITK
+-- num_gpus: 4
+-- model_dir: /proj/NIRAL/users/siyangj/model_10210050
+-- action: evaluation
+-- dataset_split_file: data_split
+-- num_threads: 4
+-- event_handler: ('model_saver', 'model_restorer', 'sampler_threading', 'apply_gradients', 'output_interpreter', 'console_logger', 'tensorboard_logger')
+[TRAINING]
+-- rotation_angle: (-10.0, 10.0)
+-- validation_max_iter: 1
+-- exclude_fraction_for_inference: 0.1
+-- validation_every_n: 20
+-- scaling_percentage: (-5.0, 5.0)
+-- num_ctrl_points: 12
+-- loss_type: CrossEntropy
+-- exclude_fraction_for_validation: 0.1
+-- tensorboard_every_n: 20
+-- proportion_to_deform: 0.8
+-- max_checkpoints: 10000
+-- sample_per_volume: 300
+-- rotation_angle_z: ()
+-- save_every_n: 100
+-- random_flipping_axes: (0, 1, 2)
+-- max_iter: 80000
+-- lr: 0.0001
+-- do_elastic_deformation: True
+-- rotation_angle_y: ()
+-- starting_iter: 60000
+-- rotation_angle_x: ()
+-- optimiser: adam
+-- deformation_sigma: 4.0

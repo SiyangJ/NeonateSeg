@@ -15,3 +15,6 @@ models/
 logs/
 inference*/
 pretrain_model/
+1mo_multiAtlas_tissue.zip
+1mo_multiAtlas_tissue/
+MacaqueSeg/

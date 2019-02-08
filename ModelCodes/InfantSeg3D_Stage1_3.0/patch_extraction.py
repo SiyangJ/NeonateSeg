@@ -19,9 +19,9 @@ def extract_overlapped_patches_index(img_data):
 	h_num = height/patch_size[1] + overlap_add
 	w_num = width/patch_size[2] + overlap_add
 
-	d_overlap = int( math.ceil(d_num*patch_size[0] - depth) * 1.0 / (d_num -1) )
-	h_overlap = int(math.ceil(h_num*patch_size[1] - height) * 1.0 / (h_num -1))
-	w_overlap = int(math.ceil(w_num*patch_size[2] - width) * 1.0 / (w_num -1))
+	d_overlap = 0 if d_num==1 else int(math.ceil(d_num*patch_size[0] - depth)  * 1.0 / (d_num -1))
+	h_overlap = 0 if h_num==1 else int(math.ceil(h_num*patch_size[1] - height) * 1.0 / (h_num -1))
+	w_overlap = 0 if w_num==1 else int(math.ceil(w_num*patch_size[2] - width)  * 1.0 / (w_num -1))
 	# print '****  type(d_overlap) = ', type(d_overlap)
 	patches_index = []
 	for d in xrange(d_num):

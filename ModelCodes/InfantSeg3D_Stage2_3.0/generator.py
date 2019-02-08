@@ -85,9 +85,9 @@ def data_random_generator(hdf5_list,
 				y_list = list()
 				for _ in xrange(batch_size):
 
-					d_ran = random.randrange(crop_pad,d - patch_size[0]-crop_pad)
-					h_ran = random.randrange(crop_pad,h - patch_size[1]-crop_pad)
-					w_ran = random.randrange(crop_pad,w - patch_size[2]-crop_pad)
+					d_ran = random.randrange(crop_pad,d - patch_size[0]-crop_pad+1)
+					h_ran = random.randrange(crop_pad,h - patch_size[1]-crop_pad+1)
+					w_ran = random.randrange(crop_pad,w - patch_size[2]-crop_pad+1)
 
 					
 					random_crop_data_t1 = img_data_t1[0,0,d_ran : d_ran+patch_size[0], 

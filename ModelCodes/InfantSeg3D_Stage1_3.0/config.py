@@ -8,6 +8,7 @@ FLAGS = tf.app.flags.FLAGS
 CONFIG_DIR = './config.ini'
 if len(sys.argv)>1 and sys.argv[1][-4:]=='.ini':
     CONFIG_DIR = sys.argv[1]
+print('Using {:s} as config file.'.format(CONFIG_DIR))
 CFP = configparser.ConfigParser()
 CFP.read(CONFIG_DIR)
 

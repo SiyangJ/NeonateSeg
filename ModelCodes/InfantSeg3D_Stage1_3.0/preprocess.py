@@ -112,8 +112,8 @@ def generate_nifti_data():
 
 		print '*** t1_data.shape=', t1_data.shape
 		print '*** nifti_label.shape=', nifti_label.shape
-		croped_data, t2_data, croped_label = remove_backgrounds(t1_data,t2_data, nifti_label)
-		
+		##croped_data, t2_data, croped_label = remove_backgrounds(t1_data,t2_data, nifti_label)
+		croped_data, t2_data, croped_label = (t1_data,t2_data, nifti_label)
 
 		t1_name = img_path.split('/')[-1].replace('.nii.gz', '')
 		t2_name = t2_path.split('/')[-1].replace('.nii.gz', '')

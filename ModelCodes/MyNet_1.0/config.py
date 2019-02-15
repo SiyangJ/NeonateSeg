@@ -20,6 +20,8 @@ tf.app.flags.DEFINE_integer('batch_size', ARGS.getint('batch_size'),
                             "Number of samples per batch.")
 tf.app.flags.DEFINE_integer('accumulate_times', ARGS.getint('accumulate_times'), 
                             "Accumulate the gradients to make effectively larger batch size.")
+tf.app.flags.DEFINE_integer('val_accumulate_times', ARGS.getint('val_accumulate_times',ARGS.getint('accumulate_times')), 
+                            "Accumulate the gradients to make effectively larger batch size.")
 
 tf.app.flags.DEFINE_string('patch_size_str', ARGS['patch_size_str'], 
                            "patch size that we will extract from 3D image")

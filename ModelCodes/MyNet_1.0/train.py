@@ -87,7 +87,7 @@ def train_model(train_data):
             total_aux1_loss = 0
             total_aux2_loss = 0
             total_main_loss = 0
-            for i in xrange(FLAGS.accumulate_times):                
+            for i in xrange(FLAGS.val_accumulate_times):                
                 val_input1, val_input2, val_label = testing_generator.next()
                 feed_dict = {td.tf_t1_input : val_input1, 
                              td.tf_t2_input : val_input2,  
@@ -99,9 +99,9 @@ def train_model(train_data):
                 total_aux2_loss += aux2_loss
                 total_main_loss += main_loss
             
-            total_aux1_loss /= FLAGS.accumulate_times
-            total_aux2_loss /= FLAGS.accumulate_times
-            total_main_loss /= FLAGS.accumulate_times
+            total_aux1_loss /= FLAGS.val_accumulate_times
+            total_aux2_loss /= FLAGS.val_accumulate_times
+            total_main_loss /= FLAGS.val_accumulate_times
             
             summary = tf.Summary(value=[
                 tf.Summary.Value(tag="aux1_loss", simple_value=total_aux1_loss),

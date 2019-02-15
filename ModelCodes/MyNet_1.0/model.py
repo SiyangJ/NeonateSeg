@@ -44,18 +44,20 @@ def _bias_variable( scope_name, name, shape, from_pretrain=False, constant_value
         bias = tf.get_variable(name, shape, DTYPE, tf.constant_initializer(constant_value))
         return bias
 
-def cal_loss(logits, labels):
+def cal_loss(logits, labels, calculate_weights=False):
     num_classes = FLAGS.cls_out
     
-    ## Enabled weights
-    ## Test TODO
-    l_uni = tf.unique_with_counts(tf.reshape(labels,[-1]))
-    weights = tf.reciprocal(tf.to_float(l_uni.count))
-    weights_normalized = weights * tf.to_float(tf.size(weights))/tf.reduce_sum(weights)
+    if calculate_weights:
+        ## Enabled weights
+        ## Test TODO
+        l_uni = tf.unique_with_counts(tf.reshape(labels,[-1]))
+        weights = tf.reciprocal(tf.to_float(l_uni.count))
+        weights_normalized = weights * tf.to_float(tf.size(weights))/tf.reduce_sum(weights)
 
-    classes_weights = tf.Variable([0.,0.,0.,0.],dtype=DTYPE,trainable=False)
-    classes_weights = classes_weights.assign(weights_normalized)
-    ##
+        classes_weights = tf.stop_gradient(weights_normalized)
+        ##
+    else:
+        classes_weights = tf.constant([ 1.0, 1.0,1.0,1.0])
     
     logits = tf.reshape(logits, (-1, num_classes))
     epsilon = tf.constant(value=1e-10)

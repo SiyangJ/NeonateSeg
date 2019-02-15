@@ -41,7 +41,7 @@ def data_random_generator(hdf5_list,
         shuffle(hdf5_list)
         
         for _local_file in hdf5_list:
-            print ('generate random patch from file %s ...' % _local_file)
+            #print ('generate random patch from file %s ...' % _local_file)
             file_handle   = h5py.File(_local_file, 'r')
             img_data_t1 = file_handle['t1data']
             img_data_t2 = file_handle['t2data']
@@ -51,7 +51,7 @@ def data_random_generator(hdf5_list,
             img_data_t1 = np.asarray(img_data_t1, 'float')
             img_data_t2 = np.asarray(img_data_t2, 'float')
             img_label = np.asarray(img_label, 'float')
-            print '>> img_data_t1.shape=',img_data_t1.shape
+            #print '>> img_data_t1.shape=',img_data_t1.shape
 
             img_data_t1 = img_data_t1[np.newaxis, np.newaxis, ... ]
             img_data_t2 = img_data_t2[np.newaxis, np.newaxis, ... ]
@@ -65,7 +65,7 @@ def data_random_generator(hdf5_list,
             w = img_data_t1.shape[-1]
             crop_pad = FLAGS.training_crop_pad
 
-            print '>> crop center [%d:-%d]... d=%d,h=%d,w=%d' %(crop_pad,crop_pad,d,h,w,)
+            #print '>> crop center [%d:-%d]... d=%d,h=%d,w=%d' %(crop_pad,crop_pad,d,h,w,)
             # how many times that we extract a batch of patches in one image
             for _ in xrange(extract_batches_one_image):
                 x1_list = list()

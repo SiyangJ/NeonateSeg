@@ -301,11 +301,6 @@ def create_model_infant_seg(train_phase=True):
 
     final_loss = aux1_loss*FLAGS.aux1_weight + aux2_loss*FLAGS.aux2_weight \
                                              + main_loss*FLAGS.main_weight
-    
-    tf.summary.scalar('aux1_loss', aux1_loss)
-    tf.summary.scalar('aux2_loss', aux2_loss)
-    tf.summary.scalar('main_loss', main_loss)
-    tf.summary.scalar('final_loss', final_loss)
 
 
 
@@ -343,11 +338,18 @@ def create_optimizers(train_loss):
     momentum = FLAGS.momentum
     train_opti = tf.train.MomentumOptimizer(learning_rate, momentum)
     global_step    = tf.Variable(0, dtype=tf.int64,   trainable=False, name='global_step')
-    ###############################################################################
-    ###### Editted by Siyang Jing of UNC on Nov 12
-    ###### Only train part of the variables
-    ###### Train first two conv stages, last deconv stage, and batch norms
-    var_list = _get_var_list()
-    train_minimize = train_opti.minimize(train_loss, name='loss_minimize', global_step=global_step)#, var_list=var_list)
+    
+    tvs = tf.trainable_variables()
+    accum_vars = [tf.Variable(tf.zeros_like(tv.initialized_value()), trainable=False) for tv in tvs]                                        
+    zero_ops = [tv.assign(tf.zeros_like(tv)) for tv in accum_vars]
+    
+    gvs = train_opti.compute_gradients(train_loss, tvs)
+    
+    accum_ops = [accum_vars[i].assign_add(gv[0]) for i, gv in enumerate(gvs)]
+    
+    train_minimize = train_opti.apply_gradients([(accum_vars[i], gv[1]) for i, gv in enumerate(gvs)],
+                                                name='apply_gradients',global_step=global_step)
+    
+    #train_minimize = train_opti.minimize(train_loss, name='loss_minimize', global_step=global_step)#, var_list=var_list)
 
-    return train_minimize, learning_rate, global_step
+    return zero_ops,accum_ops,train_minimize, learning_rate, global_step

@@ -38,6 +38,10 @@ def parse_patch_size(pat_str):
 	arr_str = pat_str.split(',')
 	return (int(arr_str[0]),int(arr_str[1]),int(arr_str[2]) ) 
 
+def parse_class_weights(pat_str):
+	arr_str = pat_str.split(',')
+	return (float(arr_str[0]),float(arr_str[1]),float(arr_str[2]),float(arr_str[3])) 
+
 
 def main():
 	pat_str = '32,64,128'

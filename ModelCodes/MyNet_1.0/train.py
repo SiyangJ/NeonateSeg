@@ -131,7 +131,7 @@ def train_model(train_data):
             elif batch-best_batch >= FLAGS.early_stop_iteration:
                 if fail_time >= FLAGS.early_stop_max_fail:
                     print("TRAINING STOP: From batch %d lr has been decreased %d times and loss does not decrease." % 
-                          (batch,FLAGS.early_stop_max_fail))
+                          (best_batch,FLAGS.early_stop_max_fail))
                     return
                 ## Restore model
                 saver = tf.train.Saver()

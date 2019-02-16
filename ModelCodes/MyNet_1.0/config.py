@@ -18,13 +18,15 @@ tf.app.flags.DEFINE_integer('cls_out', ARGS.getint('cls_out'),
                             "classfy how many categories")
 tf.app.flags.DEFINE_integer('batch_size', ARGS.getint('batch_size'), 
                             "Number of samples per batch.")
-tf.app.flags.DEFINE_integer('accumulate_times', ARGS.getint('accumulate_times'), 
+tf.app.flags.DEFINE_integer('accumulate_times', ARGS.getint('accumulate_times',1), 
                             "Accumulate the gradients to make effectively larger batch size.")
 tf.app.flags.DEFINE_integer('val_accumulate_times', ARGS.getint('val_accumulate_times',ARGS.getint('accumulate_times')), 
                             "Accumulate the gradients to make effectively larger batch size.")
 
 tf.app.flags.DEFINE_bool('calculate_class_weights', ARGS.getboolean('calculate_class_weights',False), 
                          "whether to calculate class weights to balance the training")
+tf.app.flags.DEFINE_string('class_weights_string', ARGS.get('provide_class_weights',"1.0,1.0,1.0,1.0"), 
+                           "Class weights used to balance the labels; default is 1,1,1,1.")
 
 tf.app.flags.DEFINE_integer('validate_every_n', ARGS.getint('validate_every_n',10), 
                             "Validate the training every n steps.")

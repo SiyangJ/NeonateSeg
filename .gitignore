@@ -18,3 +18,7 @@ pretrain_model/
 1mo_multiAtlas_tissue.zip
 1mo_multiAtlas_tissue/
 MacaqueSeg/
+myPretrainData/
+test/
+InfantTissuePreTraining/
+ModelCodes/MyModel_1.0/

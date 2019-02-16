@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from pretrain_transfer import get_pretrained_weights
-from util.utils import parse_patch_size
+from util.utils import parse_patch_size,parse_class_weights
 
 from config import FLAGS
 
@@ -57,7 +57,10 @@ def cal_loss(logits, labels, calculate_weights=FLAGS.calculate_class_weights):
         classes_weights = tf.stop_gradient(weights_normalized)
         ##
     else:
-        classes_weights = tf.constant([ 1.0, 1.0,1.0,1.0])
+        if FLAGS.class_weights_string is not None:
+            classes_weights = tf.constant(parse_class_weights(FLAGS.class_weights_string))
+        else:
+            classes_weights = tf.constant([ 1.0, 1.0,1.0,1.0])
     
     logits = tf.reshape(logits, (-1, num_classes))
     epsilon = tf.constant(value=1e-10)

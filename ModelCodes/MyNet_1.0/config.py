@@ -26,6 +26,17 @@ tf.app.flags.DEFINE_integer('val_accumulate_times', ARGS.getint('val_accumulate_
 tf.app.flags.DEFINE_bool('calculate_class_weights', ARGS.getboolean('calculate_class_weights',False), 
                          "whether to calculate class weights to balance the training")
 
+tf.app.flags.DEFINE_integer('validate_every_n', ARGS.getint('validate_every_n',10), 
+                            "Validate the training every n steps.")
+
+tf.app.flags.DEFINE_integer('early_stop_iteration', 
+                            ARGS.getint('early_stop_iteration',FLAGS.batch_size*FLAGS.val_accumulate_times*100), 
+                            "Stop the training and go back to the last best result.")
+
+tf.app.flags.DEFINE_integer('early_stop_max_fail', 
+                            ARGS.getint('early_stop_max_fail',3), 
+                            "Stop the training and go back to the last best result.")
+
 tf.app.flags.DEFINE_string('patch_size_str', ARGS['patch_size_str'], 
                            "patch size that we will extract from 3D image")
 tf.app.flags.DEFINE_integer('batches_one_image', ARGS.getint('batches_one_image'), 
@@ -80,7 +91,16 @@ tf.app.flags.DEFINE_string('hdf5_list_path', ARGS['hdf5_list_path'],
 tf.app.flags.DEFINE_string('hdf5_train_list_path', ARGS['hdf5_train_list_path'],
                            "Store the training hdf5 file list.")
 tf.app.flags.DEFINE_string('hdf5_validation_list_path', ARGS['hdf5_validation_list_path'], 
-                           "Store the training hdf5 file list.")
+                           "Store the validation hdf5 file list.")
+
+tf.app.flags.DEFINE_string('hdf5_test_list_path', ARGS.get('hdf5_test_list_path',None), 
+                           "Store the test hdf5 file list.")
+
+tf.app.flags.DEFINE_string('metric_used_on_test', ARGS.get('metric_used_on_test','same'), 
+                           "Metric used for testing.")
+tf.app.flags.DEFINE_bool('early_stop_on_test', ARGS.getboolean('early_stop_on_test',False), 
+                         "whether early stop on test, default is False")
+
 tf.app.flags.DEFINE_string('hdf5_dir', ARGS['hdf5_dir'],
                            "Store the path which contains hdf5 files.")
 

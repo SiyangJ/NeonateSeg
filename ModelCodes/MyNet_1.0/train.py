@@ -7,15 +7,15 @@ from generator import get_training_and_testing_generators
 from copy import deepcopy
 from config import FLAGS
 
-def _save_checkpoint(train_data, batch):
+def _save_checkpoint(train_data, batch, log=True):
     td = train_data
     saver = tf.train.Saver()
     model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_'+str(batch))
     
     save_path = saver.save(td.sess, model_path) #, global_step=batch)
-    print("Model saved in file: %s" % save_path)
-   
-    print ('Model saved in file: %s' % saver.last_checkpoints)
+    if log:
+        print("Model saved in file: %s" % save_path)
+        print ('Model saved in file: %s' % saver.last_checkpoints)
 
 
 def train_model(train_data):
@@ -41,13 +41,18 @@ def train_model(train_data):
 
     training_generator, testing_generator = get_training_and_testing_generators()
 
+    best_batch = -1
+    best_lr = 1
+    best_loss = 100
+    fail_time = 0
+    
     while not done:
         batch += 1
         # Update learning rate
         if batch % FLAGS.learning_rate_reduce_life == 0:
             lrval *= FLAGS.learning_rate_percentage
         
-        if batch % 5 == 0:
+        if batch % FLAGS.validate_every_n == 0:
             ## Training info
             total_aux1_loss = 0
             total_aux2_loss = 0
@@ -111,7 +116,32 @@ def train_model(train_data):
             td.val_sum_writer.add_summary(summary, batch)  
             
             print("[%25s], Epoch: [%4d], Validation Main Loss: [%3.3f]" 
-                  % (time.ctime(), batch, total_main_loss))            
+                  % (time.ctime(), batch, total_main_loss))
+            
+            
+            ## Early stopping check
+            
+            if best_batch==-1 or total_main_loss < best_loss:
+                ## Save model
+                _save_checkpoint(td, 'best', log=False)
+                best_batch = batch
+                best_loss = total_main_loss
+                best_lr = lrval
+                fail_time = 0
+            elif batch-best_batch >= FLAGS.early_stop_iteration:
+                if fail_time >= FLAGS.early_stop_max_fail:
+                    print("TRAINING STOP: From batch %d lr has been decreased %d times and loss does not decrease." % 
+                          (batch,FLAGS.early_stop_max_fail))
+                    return
+                ## Restore model
+                saver = tf.train.Saver()
+                model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_best')
+                saver.restore(td.sess, model_path)
+                batch = best_batch
+                best_lr *= FLAGS.learning_rate_percentage
+                lrval = best_lr
+                fail_time += 1
+            
         else:
             
             td.sess.run(td.zero_ops)

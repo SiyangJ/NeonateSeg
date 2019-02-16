@@ -23,6 +23,9 @@ tf.app.flags.DEFINE_integer('accumulate_times', ARGS.getint('accumulate_times'),
 tf.app.flags.DEFINE_integer('val_accumulate_times', ARGS.getint('val_accumulate_times',ARGS.getint('accumulate_times')), 
                             "Accumulate the gradients to make effectively larger batch size.")
 
+tf.app.flags.DEFINE_bool('calculate_class_weights', ARGS.getboolean('calculate_class_weights',False), 
+                         "whether to calculate class weights to balance the training")
+
 tf.app.flags.DEFINE_string('patch_size_str', ARGS['patch_size_str'], 
                            "patch size that we will extract from 3D image")
 tf.app.flags.DEFINE_integer('batches_one_image', ARGS.getint('batches_one_image'), 

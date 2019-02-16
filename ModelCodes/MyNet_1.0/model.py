@@ -44,7 +44,7 @@ def _bias_variable( scope_name, name, shape, from_pretrain=False, constant_value
         bias = tf.get_variable(name, shape, DTYPE, tf.constant_initializer(constant_value))
         return bias
 
-def cal_loss(logits, labels, calculate_weights=False):
+def cal_loss(logits, labels, calculate_weights=FLAGS.calculate_class_weights):
     num_classes = FLAGS.cls_out
     
     if calculate_weights:

@@ -4,6 +4,10 @@ import random
 import sys
 import numpy as np
 from config import FLAGS
+
+if FLAGS.load_with_sitk:
+    import SimpleITK as sitk
+
 import h5py
 import math
 from util.utils import pickle_dump, pickle_load
@@ -12,7 +16,7 @@ from util.utils import load_nifti, save_nifti
 def get_training_and_testing_generators(hdf5_train_list_file=FLAGS.hdf5_train_list_path,
                                         hdf5_validation_list_file=FLAGS.hdf5_validation_list_path,
                                          batch_size=FLAGS.batch_size,
-                                        overwrite_split=True):
+                                        overwrite_split=False):
     '''
     after split the training and testing , the split will be stored as pkl.
     overwrite_split: True is to overwrite the pkl file, which states what the 
@@ -41,16 +45,24 @@ def data_random_generator(hdf5_list,
         shuffle(hdf5_list)
         
         for _local_file in hdf5_list:
-            #print ('generate random patch from file %s ...' % _local_file)
-            file_handle   = h5py.File(_local_file, 'r')
-            img_data_t1 = file_handle['t1data']
-            img_data_t2 = file_handle['t2data']
-            img_label = file_handle['label']
             
+            if FLAGS.load_with_sitk:
+                #print ('generate random patch from file %s ...' % _local_file[01])
+                img_data_t1 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[0])),0,2)
+                img_data_t2 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[1])),0,2)
+                img_label   = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[2])),0,2)
+            else:
+                #print ('generate random patch from file %s ...' % _local_file)
+                file_handle   = h5py.File(_local_file, 'r')
+                img_data_t1 = file_handle['t1data']
+                img_data_t2 = file_handle['t2data']
+                img_label = file_handle['label']
+
+                img_data_t1 = np.asarray(img_data_t1, 'float')
+                img_data_t2 = np.asarray(img_data_t2, 'float')
+                img_label = np.asarray(img_label, 'float')
+                file_handle.close()
             
-            img_data_t1 = np.asarray(img_data_t1, 'float')
-            img_data_t2 = np.asarray(img_data_t2, 'float')
-            img_label = np.asarray(img_label, 'float')
             #print '>> img_data_t1.shape=',img_data_t1.shape
 
             img_data_t1 = img_data_t1[np.newaxis, np.newaxis, ... ]
@@ -106,10 +118,6 @@ def data_random_generator(hdf5_list,
                     # dm_list.append(random_crop_data_dm)
 
                 yield convert_data_multimodality(x1_list, x2_list, y_list)
-                
-
-            file_handle.close()
-
 
 
 def get_validation_split( hdf5_train_list_file, hdf5_validation_list_file,
@@ -130,13 +138,15 @@ def get_validation_split( hdf5_train_list_file, hdf5_validation_list_file,
         hdf5_files = f.readlines()
         # you may also want to remove whitespace characters like `\n` at the end of each line
         hdf5_training_files_list = [x.strip() for x in hdf5_files] 
+        if FLAGS.load_with_sitk:
+            hdf5_training_files_list = [x.split(',') for x in hdf5_training_files_list]
 
     with open(hdf5_validation_list_file) as f:
         hdf5_files = f.readlines()
         # you may also want to remove whitespace characters like `\n` at the end of each line
         hdf5_validation_files_list = [x.strip() for x in hdf5_files] 
-
-
+        if FLAGS.load_with_sitk:
+            hdf5_validation_files_list = [x.split(',') for x in hdf5_validation_files_list]
 
     if shuffle_list:
         shuffle(hdf5_training_files_list)
@@ -144,7 +154,6 @@ def get_validation_split( hdf5_train_list_file, hdf5_validation_list_file,
 
     training_list = hdf5_training_files_list
     validation_list = hdf5_validation_files_list
-
     
     return training_list, validation_list
 

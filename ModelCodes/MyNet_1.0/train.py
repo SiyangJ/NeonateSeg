@@ -39,7 +39,7 @@ def train_model(train_data):
 
     assert FLAGS.learning_rate_reduce_life % 10 == 0
 
-    training_generator, testing_generator = get_training_and_testing_generators()
+    training_generator, testing_generator = get_training_and_testing_generators(overwrite_split=FLAGS.overwrite_split)
 
     best_batch = -1
     best_lr = 1

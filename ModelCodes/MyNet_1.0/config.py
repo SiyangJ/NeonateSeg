@@ -85,7 +85,15 @@ tf.app.flags.DEFINE_float('L2_loss_weight', ARGS.getfloat('L2_loss_weight'),
 
 
 ################### Train Data################
-# /proj/NIRAL/users/siyangj/myData/BernNet
+
+tf.app.flags.DEFINE_bool('overwrite_split', ARGS.getboolean('overwrite_split',False),
+                         "whether to overwrite existing data splitting file")
+
+tf.app.flags.DEFINE_bool('load_with_sitk', ARGS.getboolean('load_with_sitk',False),
+                         "whether to directly load images with Simple ITK")
+
+tf.app.flags.DEFINE_string('hdf5_dir', ARGS['hdf5_dir'],
+                           "Store the path which contains hdf5 files.")
 tf.app.flags.DEFINE_string('train_data_dir', ARGS['train_data_dir'],
                            "Store the training hdf5 file list.")
 tf.app.flags.DEFINE_string('hdf5_list_path', ARGS['hdf5_list_path'],
@@ -94,7 +102,6 @@ tf.app.flags.DEFINE_string('hdf5_train_list_path', ARGS['hdf5_train_list_path'],
                            "Store the training hdf5 file list.")
 tf.app.flags.DEFINE_string('hdf5_validation_list_path', ARGS['hdf5_validation_list_path'], 
                            "Store the validation hdf5 file list.")
-
 tf.app.flags.DEFINE_string('hdf5_test_list_path', ARGS.get('hdf5_test_list_path',None), 
                            "Store the test hdf5 file list.")
 
@@ -102,10 +109,6 @@ tf.app.flags.DEFINE_string('metric_used_on_test', ARGS.get('metric_used_on_test'
                            "Metric used for testing.")
 tf.app.flags.DEFINE_bool('early_stop_on_test', ARGS.getboolean('early_stop_on_test',False), 
                          "whether early stop on test, default is False")
-
-tf.app.flags.DEFINE_string('hdf5_dir', ARGS['hdf5_dir'],
-                           "Store the path which contains hdf5 files.")
-
 
 ################# Pretrain Model: Partial Transfer Learning  ########################################################
 tf.app.flags.DEFINE_bool('from_pretrain', ARGS.getboolean('from_pretrain'), 

@@ -50,6 +50,47 @@ tf.app.flags.DEFINE_integer('prepost_pad', ARGS.getint('prepost_pad'),
 tf.app.flags.DEFINE_integer('training_crop_pad', ARGS.getint('training_crop_pad'), 
                             "padding when remove zero backgrounds in preprocess")
 
+tf.app.flags.DEFINE_bool('load_with_sitk', ARGS.getboolean('load_with_sitk',False),
+                         "whether to directly load images with Simple ITK")
+tf.app.flags.DEFINE_bool('preload_data', ARGS.getboolean('preload_data',True), 
+                         "whether to load the data in memory for efficiency; useful when data augmentation is enabled")
+## TODO
+## Currently, data augmentation is only supported by load_sitk and pre_load
+
+tf.app.flags.DEFINE_bool('augmentation', ARGS.getboolean('augmentation',False), 
+                         "whether to use data augmentation to regularize the network")
+assert (not FLAGS.augmentation) or (FLAGS.preload_data and FLAGS.load_with_sitk), \
+    "Currently, data augmentation is only supported by load_sitk and pre_load"
+
+if FLAGS.augmentation:
+    tf.app.flags.DEFINE_string('rotation_degree', ARGS.get('rotation_degree',None), 
+                           "Rotation in degrees in data augmentation")
+    tf.app.flags.DEFINE_string('flip', ARGS.get('flip',None), 
+                           "Flip in data augmentation")
+    tf.app.flags.DEFINE_bool('deformation', ARGS.getboolean('deformation',False), 
+                           "Whether to use elastic deformation in data augmentation")
+    
+    if FLAGS.deformation:
+        tf.app.flags.DEFINE_integer('deformation_sigma', ARGS.getint('deformation_sigma',5), 
+                           "Deformation sigma in BSpline")
+        tf.app.flags.DEFINE_integer('num_control_points', ARGS.getint('num_control_points',5), 
+                           "Number of control points in BSpline deformation")
+    
+    tf.app.flags.DEFINE_string('scaling_percentage', ARGS.get('scaling_percentage',None), 
+                           "Scaling in percentage in data augmentation")
+    
+    '''
+    rotation_degree = 5,5,5
+    flip = 1,0,0
+    deformation = True
+    deformation_sigma = 5
+    num_control_points = 5
+    scaling_percentage = 5,5,5
+    '''
+
+tf.app.flags.DEFINE_integer('augmentation_per_n_epoch', ARGS.getint('augmentation_per_n_epoch',3), 
+                            "Augmentation is done per n epoch for efficiency")
+
 ############### Training and Learning rate decay ##################################
 tf.app.flags.DEFINE_float('momentum', ARGS.getfloat('momentum'), 
                           "momentum for accelearating training")
@@ -88,9 +129,6 @@ tf.app.flags.DEFINE_float('L2_loss_weight', ARGS.getfloat('L2_loss_weight'),
 
 tf.app.flags.DEFINE_bool('overwrite_split', ARGS.getboolean('overwrite_split',False),
                          "whether to overwrite existing data splitting file")
-
-tf.app.flags.DEFINE_bool('load_with_sitk', ARGS.getboolean('load_with_sitk',False),
-                         "whether to directly load images with Simple ITK")
 
 tf.app.flags.DEFINE_string('hdf5_dir', ARGS['hdf5_dir'],
                            "Store the path which contains hdf5 files.")

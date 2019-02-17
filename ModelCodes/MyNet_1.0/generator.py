@@ -11,7 +11,7 @@ if FLAGS.load_with_sitk:
 import h5py
 import math
 from util.utils import pickle_dump, pickle_load
-from util.utils import parse_patch_size
+from util.utils import parse_patch_size, parse_string_to_numbers
 from util.utils import load_nifti, save_nifti
 def get_training_and_testing_generators(hdf5_train_list_file=FLAGS.hdf5_train_list_path,
                                         hdf5_validation_list_file=FLAGS.hdf5_validation_list_path,
@@ -31,6 +31,97 @@ def get_training_and_testing_generators(hdf5_train_list_file=FLAGS.hdf5_train_li
     
     return training_generator, validation_generator
 
+def _get_patch_center():
+    patch_size = parse_patch_size(FLAGS.patch_size_str)
+    center = [int(s/2) for s in patch_size]
+    return center
+'''
+def _get_deformation_transform(center=_get_patch_center()):
+
+    return bsp
+'''
+    
+def _get_scaling_transform(center=_get_patch_center()):
+    if FLAGS.scaling_percentage is None:
+        return None
+    scaling_percentage = np.asarray(parse_string_to_numbers(FLAGS.scaling_percentage,to_type=float),dtype=float)
+    scaling_percentage = np.uniform(-scaling_percentage,scaling_percentage) / 100
+    scaling_params = 1 + scaling_percentage
+    scl = sitk.ScaleTransform(3,scaling_params.tolist())
+    scl.SetCenter(center)
+    return scl
+    
+def _get_rotation_transform(center=_get_patch_center()):
+    if FLAGS.rotation_degree is None:
+        return None
+    rotation_degree = np.asarray(parse_string_to_numbers(FLAGS.rotation_degree,to_type=float),dtype=float)
+    ## TODO: How to determine angle of rotation?
+    rotation_degree = np.uniform(-rotation_degree,rotation_degree)
+    rotation_radian = rotation_degree * np.pi/180
+    rot = sitk.Euler3DTransform()
+    rot.SetRotation(rotation_radian[0],rotation_radian[1],rotation_radian[2])
+    rot.SetCenter(center)
+    return rotation_radian
+    
+def _get_flip_params():
+    if FLAGS.flip is None:
+        return None
+    return np.asarray(parse_string_to_numbers(FLAGS.flip,to_type=int),dtype=bool).tolist()
+
+def data_augment_transform(im_T1,im_T2,im_label,return_array=True):
+    ## TODO
+    im_T1.SetOrigin([0,0,0])
+    im_T2.SetOrigin([0,0,0])
+    im_label.SetOrigin([0,0,0])
+    center = _get_patch_center()
+    
+    flp = _getflip_params()
+    if flp is not None:
+        im_T1 = sitk.Flip(im_T1,flp)
+        im_T2 = sitk.Flip(im_T2,flp)
+        im_label = sitk.Flip(im_label,flp)
+    
+    # Composite
+    cmp = sitk.Transform(3, sitk.sitkComposite)
+            
+    # BSpline, learned from niftynet
+    if FLAGS.deformation == True:
+        num_cpt = FLAGS.num_control_points
+        d_sigma = FLAGS.deformation_sigma
+        trans_from_domain_mesh_size = [num_cpt] * 3
+        bsp = sitk.BSplineTransformInitializer(im_T1, trans_from_domain_mesh_size)
+        params = bsp.GetParameters()
+        params_numpy = np.asarray(params, dtype=float)
+        params_numpy = params_numpy + np.random.randn(params_numpy.shape[0]) * d_sigma
+        params = tuple(params_numpy)
+        bsp.SetParameters(params)
+        cmp.AddTransform(bsp)
+    
+    # Scaling
+    scl = _get_scaling_transform(center)
+    if scl is not None:
+        cmp.AddTransform(scl)
+
+    # Rotation
+    rot = _get_rotation_transform(center)
+    if rot is not None:
+        cmp.AddTransform(rot)
+    
+    # Resample
+    resampler = sitk.ResampleImageFilter()
+    resampler.SetInterpolator(sitk.sitkBSpline)
+    resampler.SetReferenceImage(im_T1)
+    resampler.SetDefaultPixelValue(0)
+    resampler.SetTransform(cmp)
+    
+    arr_T1 = simtk.GetArrayFromImage(resampler.Execute(im_T1))
+    arr_T2 = simtk.GetArrayFromImage(resampler.Execute(im_T2))
+    
+    resempler.SetInterpolator(sitk.sitkNearestNeighbor)
+    arr_label = simtk.GetArrayFromImage(resampler.Execute(im_label))
+    
+    return arr_T1,arr_T2,arr_label
+
 def data_random_generator(hdf5_list, 
                             patch_size_str=FLAGS.patch_size_str, 
                             batch_size=1,
@@ -41,16 +132,44 @@ def data_random_generator(hdf5_list,
         random strategy: 0. each time extract a batch_size from 
     '''
     patch_size = parse_patch_size(patch_size_str)
+    
+    ################ Preload Data
+    if FLAGS.preload_data and load_with_sitk:
+        if FLAGS.augmentation:
+            all_data = [[sitk.ReadImage(_local_file[_local_file_idx])
+                         for _local_file_idx in xrange(3)] 
+                        for _local_file in hdf5_list]
+        else:
+            all_data = [[np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[_local_file_idx])),0,2)
+                         for _local_file_idx in xrange(3)] 
+                        for _local_file in hdf5_list]            
+    
+    _epoch = -1
     while True:
-        shuffle(hdf5_list)
-        
-        for _local_file in hdf5_list:
+        _epoch += 1
+        if FLAGS.augmentation and _epoch % FLAGS.augmentation_per_n_epoch==0:
+            ## Construct an array of augmented images
+            augmented_data = [list(data_augment_transform(_original_image[0],
+                                                          _original_image[1],
+                                                          _original_image[2],
+                                                          return_array=True))
+                              for _original_image in all_data]
             
+        if FLAGS.preload_data and load_with_sitk:
+            shuffle(all_data)
+        else:
+            shuffle(hdf5_list)
+        
+        for _local_file in (augmented_data if FLAGS.augmentation else \
+                            (all_data if FLAGS.preload_data and load_with_sitk 
+                             else hdf5_list)):            
             if FLAGS.load_with_sitk:
-                #print ('generate random patch from file %s ...' % _local_file[01])
-                img_data_t1 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[0])),0,2)
-                img_data_t2 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[1])),0,2)
-                img_label   = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[2])),0,2)
+                if FLAGS.preload_data:
+                    img_data_t1,img_data_t2,img_label = _local_file
+                else:
+                    img_data_t1 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[0])),0,2)
+                    img_data_t2 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[1])),0,2)
+                    img_label   = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[2])),0,2)
             else:
                 #print ('generate random patch from file %s ...' % _local_file)
                 file_handle   = h5py.File(_local_file, 'r')

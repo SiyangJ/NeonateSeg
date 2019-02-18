@@ -36,7 +36,7 @@ def save_hdr_img(img_data, affine, header, save_path):
 
 def parse_string_to_numbers(pat_str,to_type=float):
     arr_str = pat_str.split(',')
-    return (to_type(s) for s in arr_str)
+    return tuple(to_type(s) for s in arr_str)
     
 def parse_patch_size(pat_str):
     arr_str = pat_str.split(',')

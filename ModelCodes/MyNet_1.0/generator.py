@@ -3,6 +3,7 @@ from random import shuffle
 import random
 import sys
 import numpy as np
+from copy import deepcopy
 from config import FLAGS
 
 if FLAGS.load_with_sitk:
@@ -45,7 +46,7 @@ def _get_scaling_transform(center=_get_patch_center()):
     if FLAGS.scaling_percentage is None:
         return None
     scaling_percentage = np.asarray(parse_string_to_numbers(FLAGS.scaling_percentage,to_type=float),dtype=float)
-    scaling_percentage = np.uniform(-scaling_percentage,scaling_percentage) / 100
+    scaling_percentage = np.random.uniform(-scaling_percentage,scaling_percentage) / 100
     scaling_params = 1 + scaling_percentage
     scl = sitk.ScaleTransform(3,scaling_params.tolist())
     scl.SetCenter(center)
@@ -56,17 +57,20 @@ def _get_rotation_transform(center=_get_patch_center()):
         return None
     rotation_degree = np.asarray(parse_string_to_numbers(FLAGS.rotation_degree,to_type=float),dtype=float)
     ## TODO: How to determine angle of rotation?
-    rotation_degree = np.uniform(-rotation_degree,rotation_degree)
+    rotation_degree = np.random.uniform(-rotation_degree,rotation_degree)
     rotation_radian = rotation_degree * np.pi/180
     rot = sitk.Euler3DTransform()
     rot.SetRotation(rotation_radian[0],rotation_radian[1],rotation_radian[2])
     rot.SetCenter(center)
-    return rotation_radian
+    return rot
     
 def _get_flip_params():
     if FLAGS.flip is None:
         return None
-    return np.asarray(parse_string_to_numbers(FLAGS.flip,to_type=int),dtype=bool).tolist()
+    flp = np.asarray(parse_string_to_numbers(FLAGS.flip,to_type=int),dtype=bool)
+    rnd_flp = np.random.choice([True,False],3)
+    flp = np.logical_and(flp,rnd_flp)
+    return flp.tolist()
 
 def data_augment_transform(im_T1,im_T2,im_label,return_array=True):
     ## TODO
@@ -75,11 +79,11 @@ def data_augment_transform(im_T1,im_T2,im_label,return_array=True):
     im_label.SetOrigin([0,0,0])
     center = _get_patch_center()
     
-    flp = _getflip_params()
+    flp = _get_flip_params()
     if flp is not None:
-        im_T1 = sitk.Flip(im_T1,flp)
-        im_T2 = sitk.Flip(im_T2,flp)
-        im_label = sitk.Flip(im_label,flp)
+        im_T1 = sitk.Flip(im_T1,deepcopy(flp))
+        im_T2 = sitk.Flip(im_T2,deepcopy(flp))
+        im_label = sitk.Flip(im_label,deepcopy(flp))
     
     # Composite
     cmp = sitk.Transform(3, sitk.sitkComposite)
@@ -114,11 +118,11 @@ def data_augment_transform(im_T1,im_T2,im_label,return_array=True):
     resampler.SetDefaultPixelValue(0)
     resampler.SetTransform(cmp)
     
-    arr_T1 = simtk.GetArrayFromImage(resampler.Execute(im_T1))
-    arr_T2 = simtk.GetArrayFromImage(resampler.Execute(im_T2))
+    arr_T1 = sitk.GetArrayFromImage(resampler.Execute(im_T1))
+    arr_T2 = sitk.GetArrayFromImage(resampler.Execute(im_T2))
     
-    resempler.SetInterpolator(sitk.sitkNearestNeighbor)
-    arr_label = simtk.GetArrayFromImage(resampler.Execute(im_label))
+    resampler.SetInterpolator(sitk.sitkNearestNeighbor)
+    arr_label = sitk.GetArrayFromImage(resampler.Execute(im_label))
     
     return arr_T1,arr_T2,arr_label
 
@@ -134,7 +138,7 @@ def data_random_generator(hdf5_list,
     patch_size = parse_patch_size(patch_size_str)
     
     ################ Preload Data
-    if FLAGS.preload_data and load_with_sitk:
+    if FLAGS.preload_data and FLAGS.load_with_sitk:
         if FLAGS.augmentation:
             all_data = [[sitk.ReadImage(_local_file[_local_file_idx])
                          for _local_file_idx in xrange(3)] 
@@ -155,13 +159,13 @@ def data_random_generator(hdf5_list,
                                                           return_array=True))
                               for _original_image in all_data]
             
-        if FLAGS.preload_data and load_with_sitk:
+        if FLAGS.preload_data and FLAGS.load_with_sitk:
             shuffle(all_data)
         else:
             shuffle(hdf5_list)
         
         for _local_file in (augmented_data if FLAGS.augmentation else \
-                            (all_data if FLAGS.preload_data and load_with_sitk 
+                            (all_data if FLAGS.preload_data and FLAGS.load_with_sitk 
                              else hdf5_list)):            
             if FLAGS.load_with_sitk:
                 if FLAGS.preload_data:

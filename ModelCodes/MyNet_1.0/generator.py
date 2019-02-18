@@ -245,8 +245,8 @@ def data_random_generator(hdf5_list,
 
 def get_data_list(list_file,shuffle_list=True):
     if not os.path.exists(list_file):
-         print ("list_file_path: %s does not exists..." % (list_file))
-            sys.exit(0)
+        print ("list_file_path: %s does not exists..." % (list_file))
+        sys.exit(0)
             
     with open(list_file) as f:
         data_files = f.readlines()

@@ -132,7 +132,11 @@ def remove_test_backgrounds(img_data, t2_data):
     print z_min, z_max
     '''
     img_shape = img_data.shape
-    crop_index = (0,img_shape[0], 0,img_shape[1], 0,img_shape[2])
+    x_min = y_min = z_min = 0
+    x_max = img_shape[0]
+    y_max = img_shape[1]
+    z_max = img_shape[2]
+    crop_index = (x_min,x_max, y_min, y_max, z_min, z_max)
     return (img_data[x_min:x_max, y_min:y_max, z_min:z_max], t2_data[x_min:x_max, y_min:y_max, z_min:z_max], crop_index)
 
 def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, save_pred_path):
@@ -201,7 +205,7 @@ def extract_distance_map(input_file, bg_mask_file, ouput_file):
 ## DONE editing
 def generate_distance_map(file_name):
 
-    pred_data = load_sitk(FLAGS.prediction_save_dir,'prediction-'+file_name)
+    pred_data = load_sitk(os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name))
     for _i in [0,1,2,3]:
         bg_mask_file = os.path.join(FLAGS.prediction_save_dir,'cls%d-%s'%(_i,file_name))
         cls_data = np.asarray(pred_data==_i, np.uint8)
@@ -230,9 +234,15 @@ def predict_multi_modality_test_images_in_sitk(td):
             save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name)
             predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path)
             generate_distance_map(file_name)
+            with open(os.path.join(FLAGS.prediction_save_dir,'prediction.list'),'w') as f:
+                f.write(os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name))
+                f.write('\n')
+                for _i in [1,2,3]:
+                    f.write(os.path.join(FLAGS.prediction_save_dir,'distance_map_cls%d-%s'%(_i,file_name)))
+                    f.write('\n')
 
 def main():
-    predict_multi_modality_test_images_in_nifti(None)
+    predict_multi_modality_test_images_in_sitk(None)
     
 
 if __name__ == '__main__':

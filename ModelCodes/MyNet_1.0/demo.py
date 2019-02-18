@@ -7,6 +7,7 @@ import random
 import numpy as np
 import os
 # from generator import get_training_and_testing_generators
+from config import FLAGS
 if FLAGS.load_test_with_sitk:
     from predict_multimodality_sitk import  predict_multi_modality_test_images_in_sitk
 else:
@@ -61,7 +62,7 @@ def test():
             final_loss, gene_vars, main_possibility) = create_model_infant_seg(train_phase=False)
 
     saver = tf.train.Saver()
-    model_path = tf.train.latest_checkpoint(FLAGS.last_trained_checkpoint)
+    model_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
     print('saver restore from:%s' % model_path)
     saver.restore(sess, model_path)
     

@@ -1,5 +1,6 @@
 import pickle
 import nibabel as nib
+import SimpleITK as sitk
 import numpy as np
 
 def pickle_dump(item, out_file):
@@ -12,7 +13,7 @@ def pickle_load(in_file):
         return pickle.load(opened_file)
 
 def load_sitk(sitk_path):
-    return np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(sitk_path)),0,2)
+    return np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(str(sitk_path))),0,2)
 
 def load_nifti(nifti_path):
     img1 = nib.load(nifti_path)
@@ -27,7 +28,12 @@ def save_nifti(img_data, affine, save_path):
     nib.save(new_image, save_path)
     
 def save_sitk(img_data,save_path):
-    return sitk.WriteImage(sitk.GetImageFromArray(np.swapaxes(img_data,0,2)),save_path)
+    '''
+    print(save_path)
+    print(type(save_path))
+    print(type(str(save_path)))
+    '''
+    sitk.WriteImage(sitk.GetImageFromArray(np.swapaxes(img_data,0,2)),str(save_path))
 
 def save_hdr_img(img_data, affine, header, save_path):
     # import nibabel as nib

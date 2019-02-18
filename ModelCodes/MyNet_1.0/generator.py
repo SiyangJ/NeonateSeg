@@ -28,7 +28,7 @@ def get_training_and_testing_generators(hdf5_train_list_file=FLAGS.hdf5_train_li
                                                         overwrite_split=overwrite_split)
     
     training_generator = data_random_generator(training_list, batch_size=batch_size)
-    validation_generator = data_random_generator(validation_list, batch_size=batch_size)
+    validation_generator = data_random_generator(validation_list, batch_size=batch_size, for_training=False)
     
     return training_generator, validation_generator
 
@@ -129,7 +129,8 @@ def data_augment_transform(im_T1,im_T2,im_label,return_array=True):
 def data_random_generator(hdf5_list, 
                             patch_size_str=FLAGS.patch_size_str, 
                             batch_size=1,
-                            extract_batches_one_image=FLAGS.batches_one_image):
+                            extract_batches_one_image=FLAGS.batches_one_image,
+                            for_training=True):
     '''
         randome crop patches from volume images. hdf5_data contains several volume datas.
         hdf5_data: num*1*Depth*H*W
@@ -139,7 +140,7 @@ def data_random_generator(hdf5_list,
     
     ################ Preload Data
     if FLAGS.preload_data and FLAGS.load_with_sitk:
-        if FLAGS.augmentation:
+        if for_training and FLAGS.augmentation:
             all_data = [[sitk.ReadImage(_local_file[_local_file_idx])
                          for _local_file_idx in xrange(3)] 
                         for _local_file in hdf5_list]
@@ -151,7 +152,7 @@ def data_random_generator(hdf5_list,
     _epoch = -1
     while True:
         _epoch += 1
-        if FLAGS.augmentation and _epoch % FLAGS.augmentation_per_n_epoch==0:
+        if for_training and FLAGS.augmentation and _epoch % FLAGS.augmentation_per_n_epoch==0:
             ## Construct an array of augmented images
             augmented_data = [list(data_augment_transform(_original_image[0],
                                                           _original_image[1],
@@ -164,7 +165,7 @@ def data_random_generator(hdf5_list,
         else:
             shuffle(hdf5_list)
         
-        for _local_file in (augmented_data if FLAGS.augmentation else \
+        for _local_file in (augmented_data if (for_training and FLAGS.augmentation) else \
                             (all_data if FLAGS.preload_data and FLAGS.load_with_sitk 
                              else hdf5_list)):            
             if FLAGS.load_with_sitk:

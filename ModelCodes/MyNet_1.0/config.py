@@ -173,9 +173,17 @@ tf.app.flags.DEFINE_float('epsilon', ARGS.getfloat('epsilon'),
 #tf.app.flags.DEFINE_string('test_dir','/proj/NIRAL/users/jphong/6moSegData/IBIS/Test',"the directory which contains nifti images to be segmented.")
 tf.app.flags.DEFINE_string('test_dir', ARGS['test_dir'],
                            "the directory which contains nifti images to be segmented.")
+tf.app.flags.DEFINE_bool('load_test_with_sitk', ARGS.getboolean('load_test_with_sitk',True), 
+                         "load the test/inference images with SimpleITK.")
+tf.app.flags.DEFINE_string('prediction_save_dir', ARGS.get('prediction_save_dir',FLAGS.checkpoint_dir),
+                           "The directory to save the predictions.")
+'''
+load_test_with_sitk=True
+prediction_save_dir=/proj/NIRAL/users/siyangj/NewModels/model_0217_data_aug/models/1/data_aug1
+'''
 
 def main():
-  print FLAGS.testing_file
+    print FLAGS.testing_file
 
 if __name__ == '__main__':
-  main()
+    main()

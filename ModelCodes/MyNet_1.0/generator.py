@@ -243,8 +243,24 @@ def data_random_generator(hdf5_list,
 
                 yield convert_data_multimodality(x1_list, x2_list, y_list)
 
+def get_data_list(list_file,shuffle_list=True):
+    if not os.path.exists(list_file):
+         print ("list_file_path: %s does not exists..." % (list_file))
+            sys.exit(0)
+            
+    with open(list_file) as f:
+        data_files = f.readlines()
+        # you may also want to remove whitespace characters like `\n` at the end of each line
+        files_list = [x.strip() for x in data_files] 
+        if FLAGS.load_with_sitk:
+            files_list = [x.split(',') for x in files_list]
+            
+    if shuffle_list:
+        shuffle(files_list)
+        
+    return files_list
 
-def get_validation_split( hdf5_train_list_file, hdf5_validation_list_file,
+def get_validation_split(train_list_file, validation_list_file,
                             # data_split=0.8, 
                             shuffle_list=True, 
                             overwrite_split=True):
@@ -253,34 +269,10 @@ def get_validation_split( hdf5_train_list_file, hdf5_validation_list_file,
     '''
     # if overwrite_split or not os.path.exists(FLAGS.training_file):
     # print("Creating validation split...")
-    if not os.path.exists(hdf5_train_list_file) or not os.path.exists(hdf5_validation_list_file):
-        print ("hdf5_list_file_path: %s does not exists..." % (hdf5_train_list_file))
-        print ("hdf5_validation_list_file: %s does not exists..." % (hdf5_validation_list_file))
-        sys.exit(0)
-
-    with open(hdf5_train_list_file) as f:
-        hdf5_files = f.readlines()
-        # you may also want to remove whitespace characters like `\n` at the end of each line
-        hdf5_training_files_list = [x.strip() for x in hdf5_files] 
-        if FLAGS.load_with_sitk:
-            hdf5_training_files_list = [x.split(',') for x in hdf5_training_files_list]
-
-    with open(hdf5_validation_list_file) as f:
-        hdf5_files = f.readlines()
-        # you may also want to remove whitespace characters like `\n` at the end of each line
-        hdf5_validation_files_list = [x.strip() for x in hdf5_files] 
-        if FLAGS.load_with_sitk:
-            hdf5_validation_files_list = [x.split(',') for x in hdf5_validation_files_list]
-
-    if shuffle_list:
-        shuffle(hdf5_training_files_list)
-        shuffle(hdf5_validation_files_list)
-
-    training_list = hdf5_training_files_list
-    validation_list = hdf5_validation_files_list
+    training_list = get_data_list(train_list_file,shuffle_list)
+    validation_list = get_data_list(validation_list_file,shuffle_list)
     
     return training_list, validation_list
-
 
 def normalize_data(data, mean, std):
     data2 = data - mean

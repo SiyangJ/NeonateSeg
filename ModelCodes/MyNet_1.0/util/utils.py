@@ -11,7 +11,8 @@ def pickle_load(in_file):
     with open(in_file, "rb") as opened_file:
         return pickle.load(opened_file)
 
-
+def load_sitk(sitk_path):
+    return np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(sitk_path)),0,2)
 
 def load_nifti(nifti_path):
     img1 = nib.load(nifti_path)
@@ -24,6 +25,9 @@ def load_nifti(nifti_path):
 def save_nifti(img_data, affine, save_path):
     new_image = nib.Nifti1Image(img_data, affine)
     nib.save(new_image, save_path)
+    
+def save_sitk(img_data,save_path):
+    return sitk.WriteImage(sitk.GetImageFromArray(np.swapaxes(img_data,0,2)),save_path)
 
 def save_hdr_img(img_data, affine, header, save_path):
     # import nibabel as nib

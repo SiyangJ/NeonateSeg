@@ -7,6 +7,7 @@ import time
 from patch_extraction import extract_test_patches
 # from postprocess import post_predict
 from util.utils import load_nifti, save_nifti
+from util.utils import load_sitk, save_sitk
 from util.utils import pickle_dump, pickle_load
 import nibabel as nib
 import tensorflow as tf
@@ -14,6 +15,7 @@ import glob
 from util.utils import parse_patch_size,save_hdr_img
 
 from generator import get_data_list
+import SimpleITK as sitk
 
 
 def vote_overlapped_patch(predictions, patch_indx, d,h,w):
@@ -100,6 +102,7 @@ def remove_test_backgrounds(img_data, t2_data):
         t2_data = t2_data[:,:,:,0]
     assert len(img_data.shape)==3, 'must be 3...'
     assert len(t2_data.shape)==3, 'must be 3...'
+    '''
     nonzero_label = t2_data != 0
     nonzero_label = np.asarray(nonzero_label)
 
@@ -127,18 +130,16 @@ def remove_test_backgrounds(img_data, t2_data):
     print x_min, x_max
     print y_min, y_max
     print z_min, z_max
-
-    crop_index = (x_min,x_max, y_min, y_max, z_min, z_max)
+    '''
+    img_shape = img_data.shape
+    crop_index = (0,img_shape[0], 0,img_shape[1], 0,img_shape[2])
     return (img_data[x_min:x_max, y_min:y_max, z_min:z_max], t2_data[x_min:x_max, y_min:y_max, z_min:z_max], crop_index)
-
 
 def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, save_pred_path):
     start_time  = time.time()
     print '>> begin predict nifit image: %s' % (t1_nifti_path)
-    img_data_t1, nifti_img = load_nifti(t1_nifti_path)
-    img_data_t2, _ = load_nifti(t2_nifti_path)
-    print '>>!!! at start: img_data_t2 ', t2_nifti_path
-
+    img_data_t1 = load_sitk(t1_nifti_path)
+    img_data_t2 = load_sitk(t2_nifti_path)
     print '>> load nifti image finish..shape=%s' % (img_data_t1.shape, )
     
     d_ori = img_data_t1.shape[0]
@@ -173,76 +174,62 @@ def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, s
     
     final_segmentation = final_segmentation.astype(np.uint8)
 
-    save_hdr_img(final_segmentation, nifti_img.affine, nifti_img.header, save_pred_path)
+    save_sitk(final_segmentation, save_pred_path)
 
-    
     elapsed = int(time.time() - start_time)
-
     print('!!! predit patches of 1 image, cost [%3d] seconds ' % (elapsed, ))
 
-
-
+## DONE editing
 def extract_distance_map(input_file, bg_mask_file, ouput_file):
     print '>>> input file , %s' % (input_file)
     print '  > bg_mask_file file , %s' % (bg_mask_file)
     print '  > ouput_file file , %s' % (ouput_file)
 
-    nifti_data, nifti_img = load_nifti(input_file)
-    nifti_data = np.asarray(nifti_data, np.int16)
-    bg_mask_data, _ = load_nifti(bg_mask_file)
+    sitk_data = load_sitk(input_file)
+    sitk_data = np.asarray(sitk_data, np.int16)
+    bg_mask_data = load_sitk(bg_mask_file)
     bg_mask_data = np.asarray(bg_mask_data, np.int16)
     import scipy.ndimage as ndimage
-    dis_map = ndimage.distance_transform_edt(np.logical_not(nifti_data))
+    dis_map = ndimage.distance_transform_edt(np.logical_not(sitk_data))
     dis_map = np.asarray(dis_map, np.float32)
     # set the background = 0
     dis_map[bg_mask_data==1] = 0
     # normalise
     dis_map /= np.max(dis_map)
-    save_nifti(dis_map, nifti_img.affine, ouput_file)
+    save_sitk(dis_map, ouput_file)
 
-def generate_distance_map(test_path):
-    sub_dirs = glob.glob("%s/*/" %(test_path, ))
+## DONE editing
+def generate_distance_map(file_name):
 
-    for _dir in sub_dirs:
-        # print _dir
-        file_name = _dir.split('/')[-2]
-        save_pred_path = '%s/%s_prediction.nii.gz' %(_dir, file_name, )
-        pred_data, _img = load_nifti(save_pred_path)
-        for _i in [0,1,2,3]:
-            bg_mask_file = '%s/%s_cls%d.nii.gz' %(_dir, file_name, _i,)
-            cls_data = np.asarray(pred_data==_i, np.uint8)
-            save_nifti(cls_data, _img.affine, bg_mask_file)
+    pred_data = load_sitk(FLAGS.prediction_save_dir,'prediction-'+file_name)
+    for _i in [0,1,2,3]:
+        bg_mask_file = os.path.join(FLAGS.prediction_save_dir,'cls%d-%s'%(_i,file_name))
+        cls_data = np.asarray(pred_data==_i, np.uint8)
+        save_sitk(cls_data, bg_mask_file)
 
+    for _i in [1,2,3]:
+        input_file = os.path.join(FLAGS.prediction_save_dir,'cls%d-%s'%(_i,file_name))
+        bg_mask_file = os.path.join(FLAGS.prediction_save_dir,'cls0-%s'%(file_name))
+        ouput_file = os.path.join(FLAGS.prediction_save_dir,'distance_map_cls%d-%s'%(_i,file_name))
+        extract_distance_map(input_file, bg_mask_file, ouput_file)
 
-        for _i in [1,2,3]:
-            input_file = '%s/%s_cls%d.nii.gz' %(_dir, file_name, _i)
-            bg_mask_file = '%s/%s_cls0.nii.gz' %(_dir, file_name)
-            ouput_file = '%s/%s_cls%d_distancemap.nii.gz' %(_dir, file_name, _i)
-            
-            extract_distance_map(input_file, bg_mask_file, ouput_file)
-
-def predict_multi_modality_test_images_in_nifti(td):
+## DONE editing
+def predict_multi_modality_test_images_in_sitk(td):
 
     # test_path = FLAGS.test_dir
-    # for test_path in [FLAGS.train_data_dir, FLAGS.test_dir]:
-    for test_path in [FLAGS.test_dir, ]:
-        # save_path = FLAGS.test_save_dir
+    # for test_path in [FLAGS.hdf5_train_list_path, FLAGS.hdf5_test_list_path]:
+    
+    for list_path in [FLAGS.hdf5_test_list_path, ]:
         
-        dir_list = glob.glob('%s/*/' % (test_path,))
+        dir_list = get_data_list(list_path)
 
         for _dir in dir_list:
-            file_name = _dir.split('/')[-2]
-            t1_file_path = '%s/%s-T1.nii.gz' %(_dir, file_name, )
-            t2_file_path = '%s/%s-T2.nii.gz' %(_dir, file_name, )
-
-            save_pred_path = '%s/%s_prediction.nii.gz' %(_dir, file_name, )
-            # save_post_path = '%s/%s_post.nii.gz' %(_dir, file_name, )
-
-
-            predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path,  save_pred_path)
-            # break
-            
-        generate_distance_map(test_path)
+            t1_file_path = _dir[0]
+            file_name = t1_file_path.split('/')[-1]
+            t2_file_path = _dir[1]
+            save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name)
+            predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path)
+            generate_distance_map(file_name)
 
 def main():
     predict_multi_modality_test_images_in_nifti(None)

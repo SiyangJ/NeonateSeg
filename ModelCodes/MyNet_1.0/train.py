@@ -151,12 +151,15 @@ def train_model(train_data):
                 fail_time = 0
             elif batch-best_batch >= FLAGS.early_stop_iteration:
                 if fail_time >= FLAGS.early_stop_max_fail:
-                    print("TRAINING STOP: From batch %d lr has been decreased %d times and loss does not decrease." % 
+                    print(">>> TRAINING STOP: From batch %d lr has been decreased %d times and loss does not decrease." % 
                           (best_batch,FLAGS.early_stop_max_fail))
+                    print '>>> Best batch: [%4d], best loss: [%5.5f], lr: [%1.8f]' % (best_batch,best_loss,best_lr)
                     return
+                print '>> EARLY STOP: after %d iterations, still not decreasing' % FLAGS.early_stop_iteration
                 ## Restore model
                 saver = tf.train.Saver()
-                model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_best')
+                model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_best')                
+                print '>> Restore model from iteration %d at %s' % (best_batch,model_path)                
                 saver.restore(td.sess, model_path)
                 batch = best_batch
                 best_lr *= FLAGS.learning_rate_percentage
@@ -194,7 +197,8 @@ def train_model(train_data):
             done = True
 
     _save_checkpoint(td, batch)
-    print('Finished training!')
+    print('>>> Finished training!')
+    print '>>> Best batch: [%4d], best loss: [%5.5f], lr: [%1.8f]' % (best_batch,best_loss,best_lr)
 
 
 if __name__ == '__main__':

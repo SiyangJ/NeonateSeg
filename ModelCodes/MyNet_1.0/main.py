@@ -47,6 +47,9 @@ class TrainData(object):
 
 
 def train():
+    
+    print '>>> STAGE %d TRAINING <<<' % (1 if FLAGS.stage_1 else 2)
+    
     prepare_dirs(delete_train_dir=False)
     sess, summary_writer, val_sum_writer = setup_tensorflow()
 
@@ -60,10 +63,11 @@ def train():
             aux1_pred, aux2_pred, main_pred,
             aux1_loss, aux2_loss, main_loss, 
             final_loss, gene_vars, main_possibility) = create_model_infant_t1t2dm123_seg(train_phase=True)
-
+    print '>>> MODEL CREATED'
     zero_ops, accum_ops, train_minimize, learning_rate, global_step = create_optimizers(final_loss)
-
+    print '>>> OPTIMIZER CREATED'
     train_data = TrainData(locals())
+    print '>>> TRAINING START'
     train_model(train_data)
     
 

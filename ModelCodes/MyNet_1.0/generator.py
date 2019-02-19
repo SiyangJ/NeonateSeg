@@ -172,6 +172,7 @@ def data_random_generator(hdf5_list,
             all_data = [[np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file_idx)),0,2)
                          for _local_file_idx in _local_file] 
                         for _local_file in hdf5_list]            
+        print '>>> Finished **Preloading Data**'
     
     _epoch = -1
     while True:
@@ -191,8 +192,11 @@ def data_random_generator(hdf5_list,
                                                               _oridinal_image[3],
                                                               return_array=True))
                                   for _original_image in all_data]
-            
-        if FLAGS.preload_data and FLAGS.load_with_sitk:
+            print '>>> Finished **Data Augmentation the %d th time**' % _epoch
+        
+        if for_training and FLAGS.augmentation:
+            shuffle(augmented_data)
+        elif FLAGS.preload_data and FLAGS.load_with_sitk:
             shuffle(all_data)
         else:
             shuffle(hdf5_list)
@@ -243,6 +247,7 @@ def data_random_generator(hdf5_list,
 
             #print '>> crop center [%d:-%d]... d=%d,h=%d,w=%d' %(crop_pad,crop_pad,d,h,w,)
             # how many times that we extract a batch of patches in one image
+            ##print '>> Starting to generate patches from a new image for %s' % ('training' if for_training else 'validation')
             for _ in xrange(extract_batches_one_image):
                 x1_list = list()
                 x2_list = list()
@@ -287,7 +292,7 @@ def data_random_generator(hdf5_list,
                     if not FLAGS.stage_1:
                         for _i in xrange(3):
                             dm_lists[_i].append(random_crop_data_dm_list[_i])
-
+                ##print 'A new patch is generated'
                 if FLAGS.stage_1:
                     yield convert_data_multimodality(x1_list, x2_list, y_list)
                 else:

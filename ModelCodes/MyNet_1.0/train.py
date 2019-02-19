@@ -25,11 +25,11 @@ def train_model(train_data):
     if FLAGS.restore_from_last:
         saver = tf.train.Saver()
         model_path = tf.train.latest_checkpoint(FLAGS.last_trained_checkpoint)
-        print('training: restore last checkpoint from:%s' % model_path)
+        print('**Training**: restore last checkpoint from:%s' % model_path)
         saver.restore(td.sess, model_path)
     else:
         init_op = tf.global_variables_initializer()
-        print('training: global variable initialization...')
+        print('**Training**: global variable initialization...')
         td.sess.run(init_op)
 
     lrval       = FLAGS.learning_rate_start

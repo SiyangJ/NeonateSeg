@@ -72,18 +72,23 @@ def _get_flip_params():
     flp = np.logical_and(flp,rnd_flp)
     return flp.tolist()
 
-def data_augment_transform(im_T1,im_T2,im_label,return_array=True):
+def data_augment_transform(im_T1,im_T2,im_label,return_array=True,im_pred=None):
     ## TODO
     im_T1.SetOrigin([0,0,0])
     im_T2.SetOrigin([0,0,0])
     im_label.SetOrigin([0,0,0])
-    center = _get_patch_center()
+    if im_pred is not None:
+        im_pred.SetOrigin([0,0,0])
+    #center = _get_patch_center()
+    center = [int(_s/2) for _s in im_T1.GetSize()]
     
     flp = _get_flip_params()
     if flp is not None:
         im_T1 = sitk.Flip(im_T1,deepcopy(flp))
         im_T2 = sitk.Flip(im_T2,deepcopy(flp))
         im_label = sitk.Flip(im_label,deepcopy(flp))
+        if im_pred is not None:
+            im_pred = sitk.Flip(im_pred)
     
     # Composite
     cmp = sitk.Transform(3, sitk.sitkComposite)
@@ -118,13 +123,32 @@ def data_augment_transform(im_T1,im_T2,im_label,return_array=True):
     resampler.SetDefaultPixelValue(0)
     resampler.SetTransform(cmp)
     
-    arr_T1 = sitk.GetArrayFromImage(resampler.Execute(im_T1))
-    arr_T2 = sitk.GetArrayFromImage(resampler.Execute(im_T2))
+    arr_T1 = np.swapaxes(sitk.GetArrayFromImage(resampler.Execute(im_T1)),0,2)
+    arr_T2 = np.swapaxes(sitk.GetArrayFromImage(resampler.Execute(im_T2)),0,2)
     
     resampler.SetInterpolator(sitk.sitkNearestNeighbor)
-    arr_label = sitk.GetArrayFromImage(resampler.Execute(im_label))
-    
+    arr_label = np.swapaxes(sitk.GetArrayFromImage(resampler.Execute(im_label)),0,2)
+    if im_pred is not None:
+        arr_pred = np.swapaxes(sitk.GetArrayFromImage(resampler.Execute(im_pred)),0,2)
+        return arr_T1,arr_T2,arr_label,arr_pred
     return arr_T1,arr_T2,arr_label
+
+def data_augment_transform_dm(im_T1,im_T2,im_label,im_pred,return_array=True):
+    
+    ret_arrs = data_augment_transform(im_T1,im_T2,im_label,return_array=return_array,im_pred=im_pred)
+    import scipy.ndimage as ndimage
+    bg_mask_data = np.asarray(ret_arrs[3]==0, np.uint8)
+    for _i in [1,2,3]:
+        cls_data = np.asarray(ret_arrs[3]==_i, np.uint8)
+        dis_map = ndimage.distance_transform_edt(np.logical_not(cls_data))
+        dis_map = np.asarray(dis_map, np.float32)
+        # set the background = 0
+        dis_map[bg_mask_data==1] = 0
+        # normalise
+        dis_map /= np.max(dis_map)
+        ret_arrs += (dis_map,)
+    # ret_arrs = arr_T1,arr_T2,arr_label,arr_pred,dis_map1,dis_map2,dis_map3
+    return ret_arrs
 
 def data_random_generator(hdf5_list, 
                             patch_size_str=FLAGS.patch_size_str, 
@@ -141,12 +165,12 @@ def data_random_generator(hdf5_list,
     ################ Preload Data
     if FLAGS.preload_data and FLAGS.load_with_sitk:
         if for_training and FLAGS.augmentation:
-            all_data = [[sitk.ReadImage(_local_file[_local_file_idx])
-                         for _local_file_idx in xrange(3)] 
+            all_data = [[sitk.ReadImage(_local_file_idx)
+                         for _local_file_idx in _local_file] 
                         for _local_file in hdf5_list]
         else:
-            all_data = [[np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[_local_file_idx])),0,2)
-                         for _local_file_idx in xrange(3)] 
+            all_data = [[np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file_idx)),0,2)
+                         for _local_file_idx in _local_file] 
                         for _local_file in hdf5_list]            
     
     _epoch = -1
@@ -154,11 +178,19 @@ def data_random_generator(hdf5_list,
         _epoch += 1
         if for_training and FLAGS.augmentation and _epoch % FLAGS.augmentation_per_n_epoch==0:
             ## Construct an array of augmented images
-            augmented_data = [list(data_augment_transform(_original_image[0],
-                                                          _original_image[1],
-                                                          _original_image[2],
-                                                          return_array=True))
-                              for _original_image in all_data]
+            if FLAGS.stage_1:
+                augmented_data = [list(data_augment_transform(_original_image[0],
+                                                              _original_image[1],
+                                                              _original_image[2],
+                                                              return_array=True))
+                                  for _original_image in all_data]
+            else:
+                augmented_data = [list(data_augment_transform_dm(_original_image[0],
+                                                              _original_image[1],
+                                                              _original_image[2],
+                                                              _oridinal_image[3],
+                                                              return_array=True))
+                                  for _original_image in all_data]
             
         if FLAGS.preload_data and FLAGS.load_with_sitk:
             shuffle(all_data)
@@ -170,21 +202,27 @@ def data_random_generator(hdf5_list,
                              else hdf5_list)):            
             if FLAGS.load_with_sitk:
                 if FLAGS.preload_data:
-                    img_data_t1,img_data_t2,img_label = _local_file
+                    if FLAGS.stage_1:
+                        img_data_t1,img_data_t2,img_label = _local_file
+                    else:
+                        img_data_t1,img_data_t2,img_label,_,img_dm1,img_dm2,img_dm3 = _local_file
+                        img_dm_list = [img_dm1,img_dm2,img_dm3]
                 else:
                     img_data_t1 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[0])),0,2)
                     img_data_t2 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[1])),0,2)
                     img_label   = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[2])),0,2)
+                    if not FLAGS.stage_1:
+                        img_dm_list = [np.swapaxes(sitk.GetArrayFromImage(
+                            sitk.ReadImage(_local_file[_i])),0,2) for _i in [4,5,6]]
+                    
             else:
                 #print ('generate random patch from file %s ...' % _local_file)
                 file_handle   = h5py.File(_local_file, 'r')
-                img_data_t1 = file_handle['t1data']
-                img_data_t2 = file_handle['t2data']
-                img_label = file_handle['label']
-
-                img_data_t1 = np.asarray(img_data_t1, 'float')
-                img_data_t2 = np.asarray(img_data_t2, 'float')
-                img_label = np.asarray(img_label, 'float')
+                img_data_t1 = np.asarray(file_handle['t1data'],'float')
+                img_data_t2 = np.asarray(file_handle['t2data'],'float')
+                img_label   = np.asarray(file_handle['label'],'float')
+                if not FLAGS.stage_1:
+                    img_dm_list = [np.asarray(file_handle[_s],'float')for s in ['dm1','dm2','dm3']]
                 file_handle.close()
             
             #print '>> img_data_t1.shape=',img_data_t1.shape
@@ -192,6 +230,8 @@ def data_random_generator(hdf5_list,
             img_data_t1 = img_data_t1[np.newaxis, np.newaxis, ... ]
             img_data_t2 = img_data_t2[np.newaxis, np.newaxis, ... ]
             img_label = img_label[np.newaxis, np.newaxis, ... ]
+            if not FLAGS.stage_1:
+                img_dm_list = [_dm[np.newaxis, np.newaxis, ... ]for _dm in img_dm_list]
             
             assert len(img_label.shape)==5, 'label must be in 5 dimentional..'
             assert len(img_data_t1.shape)==5, ' dimentional of volume image data must be 5..'
@@ -206,8 +246,9 @@ def data_random_generator(hdf5_list,
             for _ in xrange(extract_batches_one_image):
                 x1_list = list()
                 x2_list = list()
-                # dm_list = list()
                 y_list = list()
+                if not FLAGS.stage_1:
+                    dm_lists = [list(),list(),list()]
                 for _ in xrange(batch_size):
                     d_ran = random.randrange(crop_pad,d - patch_size[0]-crop_pad+1)
                     h_ran = random.randrange(crop_pad,h - patch_size[1]-crop_pad+1)
@@ -228,6 +269,10 @@ def data_random_generator(hdf5_list,
                                             h_ran : h_ran+patch_size[1],
                                             w_ran: w_ran+patch_size[2]]
                     random_crop_truth = np.asarray(random_crop_truth)
+                    if not FLAGS.stage_1:
+                        random_crop_data_dm_list = [_dm[0,0,d_ran : d_ran+patch_size[0], 
+                                                h_ran : h_ran+patch_size[1],
+                                                w_ran: w_ran+patch_size[2]] for _dm in img_dm_list]
 
                     assert random_crop_data_t1.shape==(patch_size[0],patch_size[1],patch_size[2]), \
                             'random_crop_data shape(%s) is not in (%s,%s,%s)'%(random_crop_data_t1.shape,patch_size[0],patch_size[1],patch_size[2])
@@ -239,9 +284,14 @@ def data_random_generator(hdf5_list,
                     x1_list.append(random_crop_data_t1)
                     x2_list.append(random_crop_data_t2)
                     y_list.append(random_crop_truth)
-                    # dm_list.append(random_crop_data_dm)
+                    if not FLAGS.stage_1:
+                        for _i in xrange(3):
+                            dm_lists[_i].append(random_crop_data_dm_list[_i])
 
-                yield convert_data_multimodality(x1_list, x2_list, y_list)
+                if FLAGS.stage_1:
+                    yield convert_data_multimodality(x1_list, x2_list, y_list)
+                else:
+                    yield convert_data_distancemap(x1_list, x2_list,dm_lists[0],dm_lists[1],dm_lists[2],y_list)
 
 def get_data_list(list_file,shuffle_list=True):
     if not os.path.exists(list_file):
@@ -328,6 +378,18 @@ def convert_data_multimodality(x1_list, x2_list, y_list):
 
     return t1_data, t2_data, y_list
 
+def convert_data_distancemap(x1_list, x2_list,dm1_list, dm2_list,dm3_list,y_list):
+    dm1_list = np.asarray(dm1_list)
+    dm2_list = np.asarray(dm2_list)
+    dm3_list = np.asarray(dm3_list)
+
+    dm1_data = dm1_list[..., np.newaxis]
+    dm2_data = dm2_list[..., np.newaxis]
+    dm3_data = dm3_list[..., np.newaxis]
+    
+    t1_data,t2_data,y_list = convert_data_multimodality(x1_list, x2_list, y_list)
+
+    return t1_data, t2_data,dm1_data, dm2_data,dm3_data, y_list
 
 def main():
     training_generator, testing_generator = get_training_and_testing_generators()

@@ -14,6 +14,9 @@ CFP.read(CONFIG_DIR)
 
 ARGS = CFP['Default']
 
+tf.app.flags.DEFINE_bool('stage_1', ARGS.getboolean('stage_1',True), 
+                         "whether is stage 1; default is True")
+
 tf.app.flags.DEFINE_integer('cls_out', ARGS.getint('cls_out'), 
                             "classfy how many categories")
 tf.app.flags.DEFINE_integer('batch_size', ARGS.getint('batch_size'), 

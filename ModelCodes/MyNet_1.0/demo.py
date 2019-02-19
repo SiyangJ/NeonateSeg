@@ -1,17 +1,27 @@
 import tensorflow as tf
 # from model import create_model_hip, create_optimizers,create_model_ivd
-from model import create_model_infant_seg, create_optimizers
+from model import create_model_infant_seg, create_model_infant_t1t2dm123_seg, create_optimizers
 # from model import create_model_infant_seg_nopooling
 from train import train_model
 import random
 import numpy as np
 import os
+import sys
 # from generator import get_training_and_testing_generators
 from config import FLAGS
-if FLAGS.load_test_with_sitk:
-    from predict_multimodality_sitk import  predict_multi_modality_test_images_in_sitk
+
+if FLAGS.stage_1:
+    if FLAGS.load_test_with_sitk:
+        from predict_multimodality_sitk import  predict_multi_modality_test_images_in_sitk
+    else:
+        from predict_multimodality import  predict_multi_modality_test_images_in_nifti
 else:
-    from predict_multimodality import  predict_multi_modality_test_images_in_nifti
+    if FLAGS.load_test_with_sitk:
+        from predict_multimodality_sitk import  predict_multi_modality_dm_test_images_in_sitk
+    else:
+        print("Not yet implemented")
+        sys.exit(0)
+        from predict_multimodality import  predict_multi_modality_dm_test_images_in_nifti
 from copy import deepcopy
 from config import FLAGS
 
@@ -55,11 +65,16 @@ def test():
     prepare_dirs(delete_train_dir=False)
     sess, summary_writer = setup_tensorflow()
     # here for test, batch_size of tf_input is 1
-
-    (tf_t1_input, tf_t2_input, tf_label, 
+    if FLAGS.stage_1:
+        (tf_t1_input, tf_t2_input, tf_label, 
+                aux1_pred, aux2_pred, main_pred,
+                aux1_loss, aux2_loss, main_loss, 
+                final_loss, gene_vars, main_possibility) = create_model_infant_seg(train_phase=False)
+    else:
+        (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label, 
             aux1_pred, aux2_pred, main_pred,
             aux1_loss, aux2_loss, main_loss, 
-            final_loss, gene_vars, main_possibility) = create_model_infant_seg(train_phase=False)
+            final_loss, gene_vars, main_possibility) = create_model_infant_t1t2dm123_seg(train_phase=False)
 
     saver = tf.train.Saver()
     model_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
@@ -67,10 +82,17 @@ def test():
     saver.restore(sess, model_path)
     
     test_data = TestData(locals())
-    if FLAGS.load_test_with_sitk:
-        predict_multi_modality_test_images_in_sitk(test_data)
+    
+    if FLAGS.stage_1:
+        if FLAGS.load_test_with_sitk:
+            predict_multi_modality_test_images_in_sitk(test_data)
+        else:
+            predict_multi_modality_test_images_in_nifti(test_data)
     else:
-        predict_multi_modality_test_images_in_nifti(test_data)
+        if FLAGS.load_test_with_sitk:
+            predict_multi_modality_dm_test_images_in_sitk(test_data)
+        else:
+            predict_multi_modality_dm_test_images_in_nifti(test_data)
     
 
 def main(argv=None):

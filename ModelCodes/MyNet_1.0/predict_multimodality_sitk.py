@@ -1,5 +1,5 @@
 from config import FLAGS
-import os.path
+import os
 import numpy as np
 import math
 import h5py
@@ -51,15 +51,8 @@ def vote_overlapped_patch(predictions, patch_indx, d,h,w):
         sum_cls_count[d_s:d_e,h_s:h_e, w_s:w_e, :] += 1
 
     possibilty_map = sum_cls_all / sum_cls_count
-
-
     final_segmentation = np.argmax(possibilty_map, axis=-1)
-
-
-
     return final_segmentation, possibilty_map
-
-
 
 def predict_multi_modality_one_img_without_label(td, t1_patches, t2_patches, index, d,h,w):
     preds_aux1 = []
@@ -94,9 +87,45 @@ def predict_multi_modality_one_img_without_label(td, t1_patches, t2_patches, ind
 
     return seg_res, possibilty_map
 
+def predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, index, d,h,w):
+	preds_aux1 = []
+	preds_aux2 = []
+	preds_main = []
 
+	start_time  = time.time()
+	patch_num = t1_patches.shape[0]
+	print '>> begin predict likelihood of each patch ..'
+	for _i in  xrange(patch_num):
+		_t1_patch = t1_patches[_i]
+		_t2_patch = t2_patches[_i]
+		_dm1_patch = dm1_patches[_i]
+		_dm2_patch = dm2_patches[_i]
+		_dm3_patch = dm3_patches[_i]
+		_index = index[_i]
 
-def remove_test_backgrounds(img_data, t2_data):
+		feed_dict = { td.tf_t1_input : _t1_patch, 
+						td.tf_t2_input : _t2_patch,
+						td.tf_dm_input1 : _dm1_patch, 
+						td.tf_dm_input2 : _dm2_patch, 
+						td.tf_dm_input3 : _dm3_patch }
+		ops = [td.aux1_pred, td.aux2_pred, td.main_possibility]
+		[aux1_pred, aux2_pred, main_pred] = td.sess.run(ops, feed_dict=feed_dict)
+		preds_aux1.append(aux1_pred)
+		preds_aux2.append(aux2_pred)
+		preds_main.append(main_pred)
+
+	patches_pred = np.asarray(preds_main)
+
+	print '>> begin vote in overlapped patch..'
+	seg_res, possibilty_map = vote_overlapped_patch(patches_pred, index, d,h,w)
+	# seconds
+	elapsed = int(time.time() - start_time)
+
+	print('predit patches of 1 iamge, cost [%3d] seconds' % (elapsed))
+
+	return seg_res, possibilty_map
+
+def remove_test_backgrounds(img_data, t2_data, img_data_dm1=None, img_data_dm2=None, img_data_dm3=None):
     if len(img_data.shape) ==4:
         img_data = img_data[:,:,:,0]
         t2_data = t2_data[:,:,:,0]
@@ -137,20 +166,30 @@ def remove_test_backgrounds(img_data, t2_data):
     y_max = img_shape[1]
     z_max = img_shape[2]
     crop_index = (x_min,x_max, y_min, y_max, z_min, z_max)
-    return (img_data[x_min:x_max, y_min:y_max, z_min:z_max], t2_data[x_min:x_max, y_min:y_max, z_min:z_max], crop_index)
+    if FLAGS.stage_1:
+        return (img_data[x_min:x_max, y_min:y_max, z_min:z_max], t2_data[x_min:x_max, y_min:y_max, z_min:z_max], crop_index)
+    else:
+        return (img_data[x_min:x_max, y_min:y_max, z_min:z_max], t2_data[x_min:x_max, y_min:y_max, z_min:z_max], img_data_dm1[x_min:x_max, y_min:y_max, z_min:z_max], img_data_dm2[x_min:x_max, y_min:y_max, z_min:z_max], img_data_dm3[x_min:x_max, y_min:y_max, z_min:z_max],crop_index)
 
-def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, save_pred_path):
+def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, save_pred_path, dm1_file_path=None, dm2_file_path=None, dm3_file_path=None):
     start_time  = time.time()
     print '>> begin predict nifit image: %s' % (t1_nifti_path)
     img_data_t1 = load_sitk(t1_nifti_path)
     img_data_t2 = load_sitk(t2_nifti_path)
+    if not FLAGS.stage_1:
+        img_data_dm1, _ = load_sitk(dm1_file_path)
+        img_data_dm2, _ = load_sitk(dm2_file_path)
+        img_data_dm3, _ = load_sitk(dm3_file_path)
     print '>> load nifti image finish..shape=%s' % (img_data_t1.shape, )
     
     d_ori = img_data_t1.shape[0]
     h_ori = img_data_t1.shape[1]
     w_ori = img_data_t1.shape[2]
     # from preprocess import remove_test_backgrounds
-    t1_data_rmbg, t2_data_rmbg, crop_index = remove_test_backgrounds(img_data_t1, img_data_t2)
+    if FLAGS.stage_1:
+        t1_data_rmbg, t2_data_rmbg, crop_index = remove_test_backgrounds(img_data_t1, img_data_t2)
+    else:
+        t1_data_rmbg, t2_data_rmbg, dm1_data_rmbg,  dm2_data_rmbg, dm3_data_rmbg, crop_index = remove_test_backgrounds(img_data_t1, img_data_t2, img_data_dm1, img_data_dm2, img_data_dm3)
     print 'crop_index', crop_index
 
     t1_data_rmbg = t1_data_rmbg[np.newaxis,np.newaxis,...]
@@ -158,10 +197,28 @@ def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, s
 
     t2_data_rmbg = t2_data_rmbg[np.newaxis,np.newaxis,...]
     t2_data_rmbg = np.asarray(t2_data_rmbg, dtype=np.float32)
+    
+    if not FLAGS.stage_1:
+        dm1_data_rmbg = dm1_data_rmbg[np.newaxis, np.newaxis, ...]
+        dm1_data_rmbg = np.asarray(dm1_data_rmbg, dtype=np.float32)
+
+        dm2_data_rmbg = dm2_data_rmbg[np.newaxis, np.newaxis, ...]
+        dm2_data_rmbg = np.asarray(dm2_data_rmbg, dtype=np.float32)
+
+        dm3_data_rmbg = dm3_data_rmbg[np.newaxis, np.newaxis, ...]
+        dm3_data_rmbg = np.asarray(dm3_data_rmbg, dtype=np.float32)
 
     t1_patches, index, d,h,w = extract_test_patches(t1_data_rmbg)
     t2_patches, index, d,h,w = extract_test_patches(t2_data_rmbg)
-    segmentations, possibilty_map =  predict_multi_modality_one_img_without_label(td, t1_patches,t2_patches, index, d,h,w)
+    
+    if not FLAGS.stage_1:
+        dm1_patches, index, d,h,w = extract_test_patches(dm1_data_rmbg,normalise=False)
+        dm2_patches, index, d,h,w = extract_test_patches(dm2_data_rmbg,normalise=False)
+        dm3_patches, index, d,h,w = extract_test_patches(dm3_data_rmbg,normalise=False)
+    if FLAGS.stage_1:
+        segmentations, possibilty_map =  predict_multi_modality_one_img_without_label(td, t1_patches,t2_patches, index, d,h,w)
+    else:
+        segmentations, possibilty_map = predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, index, d,h,w)
 
     segmentations = np.asarray(segmentations,  'uint8')
     assert len(segmentations.shape) == 3, '** segmentation result must be in 3-dimension'
@@ -181,7 +238,7 @@ def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, s
     save_sitk(final_segmentation, save_pred_path)
 
     elapsed = int(time.time() - start_time)
-    print('!!! predit patches of 1 image, cost [%3d] seconds ' % (elapsed, ))
+    print('!!! predict patches of 1 image, cost [%3d] seconds ' % (elapsed, ))
 
 ## DONE editing
 def extract_distance_map(input_file, bg_mask_file, ouput_file):
@@ -223,6 +280,11 @@ def predict_multi_modality_test_images_in_sitk(td):
     # test_path = FLAGS.test_dir
     # for test_path in [FLAGS.hdf5_train_list_path, FLAGS.hdf5_test_list_path]:
     
+    pred_list = os.path.join(FLAGS.prediction_save_dir,'prediction_stage_1.list')
+    if os.path.exists(pred_list):
+        print('The list file to store prediction already exists: %s' % pred_list)
+        os.remove(pred_list)
+    
     for list_path in [FLAGS.hdf5_test_list_path, ]:
         
         dir_list = get_data_list(list_path)
@@ -234,12 +296,49 @@ def predict_multi_modality_test_images_in_sitk(td):
             save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name)
             predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path)
             generate_distance_map(file_name)
-            with open(os.path.join(FLAGS.prediction_save_dir,'prediction.list'),'w') as f:
+
+            with open(pred_list,'a') as f:
+                f.write(t1_file_path)
+                f.write(',')
+                f.write(t2_file_path)
+                f.write(',')
+                f.write(_dir[2])
+                f.write(',')
                 f.write(os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name))
-                f.write('\n')
-                for _i in [1,2,3]:
+                f.write(',')
+                for _i,_c in zip([1,2,3],[',',',','\n']):
                     f.write(os.path.join(FLAGS.prediction_save_dir,'distance_map_cls%d-%s'%(_i,file_name)))
-                    f.write('\n')
+                    f.write(_c)
+                    
+def predict_multi_modality_dm_test_images_in_sitk(td):
+
+    # test_path = FLAGS.test_dir
+    # for test_path in [FLAGS.hdf5_train_list_path, FLAGS.hdf5_test_list_path]:
+    assert FLAGS.stage_1, "Can only be used in Stage 2"
+    pred_list = os.path.join(FLAGS.prediction_save_dir,'prediction_stage_1.list')
+    if os.path.exists(pred_list):
+        print('The list file to store prediction already exists: %s' % pred_list)
+        os.remove(pred_list)
+    for list_path in [FLAGS.hdf5_test_list_path, ]:
+        
+        dir_list = get_data_list(list_path)
+
+        for _dir in dir_list:
+            t1_file_path = _dir[0]
+            file_name = t1_file_path.split('/')[-1]
+            t2_file_path = _dir[1]
+            dm1_file_path = _dir[4]
+            dm2_file_path = _dir[5]
+            dm3_file_path = _dir[6]
+            
+            save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name)
+            predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path, dm1_file_path, dm2_file_path, dm3_file_path)
+            with open(pred_list,'a') as f:
+                for _path in _dir:
+                    f.write(_path)
+                    f.write(',')
+                f.write(os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name))
+                f.write('\n')
 
 def main():
     predict_multi_modality_test_images_in_sitk(None)

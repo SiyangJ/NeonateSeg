@@ -48,6 +48,7 @@ def train_model(train_data):
     
     while not done:
         batch += 1
+        print '>>>EPOCH %d' % batch
         # Update learning rate
         if batch % FLAGS.learning_rate_reduce_life == 0:
             lrval *= FLAGS.learning_rate_percentage
@@ -58,12 +59,22 @@ def train_model(train_data):
             total_aux2_loss = 0
             total_main_loss = 0
             td.sess.run(td.zero_ops)
-            for i in xrange(FLAGS.accumulate_times):                
-                train_input1, train_input2, train_label = training_generator.next()
-                feed_dict = {td.tf_t1_input : train_input1, 
-                             td.tf_t2_input : train_input2,  
-                             td.tf_label: train_label, 
-                             td.learning_rate : lrval}
+            for i in xrange(FLAGS.accumulate_times):
+                if FLAGS.stage_1:
+                    train_input1, train_input2, train_label = training_generator.next()
+                    feed_dict = {td.tf_t1_input : train_input1, 
+                                 td.tf_t2_input : train_input2,  
+                                 td.tf_label: train_label, 
+                                 td.learning_rate : lrval}
+                else:
+                    train_input1, train_input2, dm_input1, dm_input2, dm_input3, train_label = training_generator.next()
+                    feed_dict = {td.tf_t1_input : train_input1, 
+                     td.tf_t2_input : train_input2, 
+                     td.tf_dm_input1: dm_input1,
+                     td.tf_dm_input2: dm_input2, 
+                     td.tf_dm_input3: dm_input3,
+                     td.tf_label: train_label, 
+                     td.learning_rate : lrval}
                 ops = [td.accum_ops, td.aux1_loss, td.aux2_loss, td.main_loss]
                 [_, aux1_loss, aux2_loss, main_loss] = td.sess.run(ops, feed_dict=feed_dict)
                 
@@ -92,11 +103,21 @@ def train_model(train_data):
             total_aux1_loss = 0
             total_aux2_loss = 0
             total_main_loss = 0
-            for i in xrange(FLAGS.val_accumulate_times):                
-                val_input1, val_input2, val_label = testing_generator.next()
-                feed_dict = {td.tf_t1_input : val_input1, 
+            for i in xrange(FLAGS.val_accumulate_times):               
+                if FLAGS.stage_1:
+                    val_input1, val_input2, val_label = testing_generator.next()
+                    feed_dict = {td.tf_t1_input : val_input1, 
+                                 td.tf_t2_input : val_input2,  
+                                 td.tf_label: val_label}
+                else:
+                    val_input1, val_input2, val_dm_1, val_dm_2, val_dm_3, val_label = testing_generator.next()
+                    feed_dict = {td.tf_t1_input : val_input1, 
                              td.tf_t2_input : val_input2,  
-                             td.tf_label: val_label}
+                             td.tf_dm_input1: val_dm_1,
+                             td.tf_dm_input2: val_dm_2, 
+                             td.tf_dm_input3: val_dm_3,
+                             td.tf_label    : val_label}
+                
                 ops = [td.aux1_loss, td.aux2_loss, td.main_loss]
                 [aux1_loss, aux2_loss, main_loss] = td.sess.run(ops, feed_dict=feed_dict)
                 
@@ -145,12 +166,22 @@ def train_model(train_data):
         else:
             
             td.sess.run(td.zero_ops)
-            for i in xrange(FLAGS.accumulate_times):                
-                train_input1, train_input2, train_label = training_generator.next()
-                feed_dict = {td.tf_t1_input : train_input1, 
-                             td.tf_t2_input : train_input2,  
-                             td.tf_label: train_label, 
-                             td.learning_rate : lrval}
+            for i in xrange(FLAGS.accumulate_times):
+                if FLAGS.stage_1:
+                    train_input1, train_input2, train_label = training_generator.next()
+                    feed_dict = {td.tf_t1_input : train_input1, 
+                                 td.tf_t2_input : train_input2,  
+                                 td.tf_label: train_label, 
+                                 td.learning_rate : lrval}
+                else:
+                    train_input1, train_input2, dm_input1, dm_input2, dm_input3, train_label = training_generator.next()
+                    feed_dict = {td.tf_t1_input : train_input1, 
+                     td.tf_t2_input : train_input2, 
+                     td.tf_dm_input1: dm_input1,
+                     td.tf_dm_input2: dm_input2, 
+                     td.tf_dm_input3: dm_input3,
+                     td.tf_label: train_label, 
+                     td.learning_rate : lrval}
                 ops = [td.accum_ops, td.main_loss]
                 [_, main_loss] = td.sess.run(ops, feed_dict=feed_dict)
                 

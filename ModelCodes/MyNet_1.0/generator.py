@@ -189,7 +189,7 @@ def data_random_generator(hdf5_list,
                 augmented_data = [list(data_augment_transform_dm(_original_image[0],
                                                               _original_image[1],
                                                               _original_image[2],
-                                                              _oridinal_image[3],
+                                                              _original_image[3],
                                                               return_array=True))
                                   for _original_image in all_data]
             print '>>> Finished **Data Augmentation the %d th time**' % _epoch

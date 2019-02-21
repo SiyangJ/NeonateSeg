@@ -333,13 +333,14 @@ def predict_multi_modality_dm_test_images_in_sitk(td):
             
             save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name)
             predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path, dm1_file_path, dm2_file_path, dm3_file_path)
-
             with open(pred_list,'a') as f:
                 for _path in _dir:
                     f.write(_path)
                     f.write(',')
                 f.write(os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name))
                 f.write('\n')
+        print '>>> Finish predicting list %s' % list_path
+    print '>>> Prediction finished!!!'
 
 def eval_test_images_in_sitk(td):
     

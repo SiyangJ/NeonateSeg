@@ -182,7 +182,7 @@ tf.app.flags.DEFINE_bool('show_test_in_training', ARGS.getboolean('show_test_in_
 tf.app.flags.DEFINE_integer('test_every_n', ARGS.getint('test_every_n',FLAGS.validate_every_n), 
                             "Seed used to initialize rng.")
 if FLAGS.show_test_in_training:
-    assert FLAGS.validate_every_n % FLAGS.test_every_n == 0, "*test_every_n* must divide *validate_every_n*"
+    assert FLAGS.test_every_n % FLAGS.validate_every_n == 0, "*test_every_n* must be divisible by *validate_every_n*"
 
 tf.app.flags.DEFINE_bool('test_after_training', ARGS.getboolean('test_after_training',False), 
                          "Whether to perform test image evaluation after training is complete.")

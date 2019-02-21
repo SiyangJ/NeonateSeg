@@ -156,6 +156,7 @@ def train_model(train_data):
             print("[%25s], Epoch: [%4d], Validation Main Loss: [%3.3f]" 
                   % (time.ctime(), batch, total_main_loss))
             
+            ## Test evaluation info
             if FLAGS.show_test_in_training and \
                 (batch % FLAGS.test_every_n == 0 or \
                 (batch==1 and FLAGS.restore_from_last)):
@@ -186,7 +187,13 @@ def train_model(train_data):
                     
                     ## Rewrite the checkpoint file such that it always points to snapshot_best
                     _rewrite_checkpoint_to_best()
-                    
+                    if FLAGS.test_after_training:
+                        saver = tf.train.Saver()
+                        model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_best')
+                        print '>> **Test evaluation** after training: restore model from iteration %d at %s' % \
+                            (best_batch,model_path)
+                        saver.restore(td.sess, model_path)
+                        return eval_test_images_in_sitk(td)
                     return
                 print '>> EARLY STOP: after %d iterations, still not decreasing' % FLAGS.early_stop_iteration
                 ## Restore model
@@ -232,6 +239,13 @@ def train_model(train_data):
     _save_checkpoint(td, batch)
     ## Rewrite the checkpoint file such that it always points to snapshot_best
     _rewrite_checkpoint_to_best()
+    if FLAGS.test_after_training:
+        saver = tf.train.Saver()
+        model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_best')
+        print '>> **Test evaluation** after training: restore model from iteration %d at %s' % \
+            (best_batch,model_path)
+        saver.restore(td.sess, model_path)
+        return eval_test_images_in_sitk(td)
     print('>>> Finished training!')
     print '>>> Best batch: [%4d], best loss: [%5.5f], lr: [%1.8f]' % (best_batch,best_loss,best_lr)
 

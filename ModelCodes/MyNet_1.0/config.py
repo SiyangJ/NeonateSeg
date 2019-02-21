@@ -143,13 +143,6 @@ tf.app.flags.DEFINE_string('hdf5_train_list_path', ARGS['hdf5_train_list_path'],
                            "Store the training hdf5 file list.")
 tf.app.flags.DEFINE_string('hdf5_validation_list_path', ARGS['hdf5_validation_list_path'], 
                            "Store the validation hdf5 file list.")
-tf.app.flags.DEFINE_string('hdf5_test_list_path', ARGS.get('hdf5_test_list_path',None), 
-                           "Store the test hdf5 file list.")
-
-tf.app.flags.DEFINE_string('metric_used_on_test', ARGS.get('metric_used_on_test','same'), 
-                           "Metric used for testing.")
-tf.app.flags.DEFINE_bool('early_stop_on_test', ARGS.getboolean('early_stop_on_test',False), 
-                         "whether early stop on test, default is False")
 
 ################# Pretrain Model: Partial Transfer Learning  ########################################################
 tf.app.flags.DEFINE_bool('from_pretrain', ARGS.getboolean('from_pretrain'), 
@@ -174,12 +167,34 @@ tf.app.flags.DEFINE_float('epsilon', ARGS.getfloat('epsilon'),
 
 ################ Test Data ###############################
 #tf.app.flags.DEFINE_string('test_dir','/proj/NIRAL/users/jphong/6moSegData/IBIS/Test',"the directory which contains nifti images to be segmented.")
+tf.app.flags.DEFINE_string('hdf5_test_list_path', ARGS.get('hdf5_test_list_path',None), 
+                           "Store the test hdf5 file list.")
 tf.app.flags.DEFINE_string('test_dir', ARGS['test_dir'],
                            "the directory which contains nifti images to be segmented.")
 tf.app.flags.DEFINE_bool('load_test_with_sitk', ARGS.getboolean('load_test_with_sitk',True), 
                          "load the test/inference images with SimpleITK.")
 tf.app.flags.DEFINE_string('prediction_save_dir', ARGS.get('prediction_save_dir',FLAGS.checkpoint_dir),
                            "The directory to save the predictions.")
+tf.app.flags.DEFINE_string('metric_used_for_test', ARGS.get('metric_used_for_test','Dice'),
+                           "The metric used for model evaluation on test images.")
+tf.app.flags.DEFINE_bool('show_test_in_training', ARGS.getboolean('show_test_in_training',False), 
+                         "Whether to show the test evaluations in training.")
+tf.app.flags.DEFINE_integer('test_every_n', ARGS.getint('test_every_n',FLAGS.validate_every_n), 
+                            "Seed used to initialize rng.")
+if FLAGS.show_test_in_training:
+    assert FLAGS.validate_every_n % FLAGS.test_every_n == 0, "*test_every_n* must divide *validate_every_n*"
+
+tf.app.flags.DEFINE_bool('test_after_training', ARGS.getboolean('test_after_training',False), 
+                         "Whether to perform test image evaluation after training is complete.")
+tf.app.flags.DEFINE_bool('early_stop_on_test', ARGS.getboolean('early_stop_on_test',False), 
+                         "Whether to determine early stop on test evaluation.")
+'''
+metric_used_for_test=Dice
+show_test_in_training=True
+test_every_n = 20
+test_after_training=True
+early_stop_on_test=False
+'''
 '''
 load_test_with_sitk=True
 prediction_save_dir=/proj/NIRAL/users/siyangj/NewModels/model_0217_data_aug/models/1/data_aug1

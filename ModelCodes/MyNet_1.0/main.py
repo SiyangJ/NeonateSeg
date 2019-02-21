@@ -36,8 +36,13 @@ def setup_tensorflow():
     ## Try to add validation summary writer
     tf.gfile.MkDir('%s/training_log' % (FLAGS.checkpoint_dir,))
     tf.gfile.MkDir('%s/validation_log' % (FLAGS.checkpoint_dir,))
-    summary_writer = tf.summary.FileWriter('%s/training_log' % (FLAGS.checkpoint_dir,), sess.graph_def)
-    val_sum_writer = tf.summary.FileWriter('%s/validation_log' % (FLAGS.checkpoint_dir,), sess.graph_def)
+    summary_writer = tf.summary.FileWriter('%s/training_log' % (FLAGS.checkpoint_dir,), sess.graph)
+    val_sum_writer = tf.summary.FileWriter('%s/validation_log' % (FLAGS.checkpoint_dir,), sess.graph)
+    
+    if FLAGS.show_test_in_training:
+        tf.gfile.MkDir('%s/test_log' % (FLAGS.checkpoint_dir,))
+        test_sum_writer = tf.summary.FileWriter('%s/test_log' % (FLAGS.checkpoint_dir,), sess.graph)
+        return sess, summary_writer, val_sum_writer, test_sum_writer
 
     return sess, summary_writer, val_sum_writer
 
@@ -47,6 +52,34 @@ class TrainData(object):
 
 
 def train():
+    
+    print '>>> STAGE %d TRAINING <<<' % (1 if FLAGS.stage_1 else 2)
+    
+    prepare_dirs(delete_train_dir=False)
+    if FLAGS.show_test_in_training:
+        sess, summary_writer, val_sum_writer, test_sum_writer = setup_tensorflow()
+    else:
+        sess, summary_writer, val_sum_writer = setup_tensorflow()
+
+    if FLAGS.stage_1:
+        (tf_t1_input, tf_t2_input, tf_label, 
+                aux1_pred, aux2_pred, main_pred,
+                aux1_loss, aux2_loss, main_loss, 
+                final_loss, gene_vars, main_possibility) = create_model_infant_seg(train_phase=True)
+    else:
+        (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label, 
+            aux1_pred, aux2_pred, main_pred,
+            aux1_loss, aux2_loss, main_loss, 
+            final_loss, gene_vars, main_possibility) = create_model_infant_t1t2dm123_seg(train_phase=True)
+    print '>>> MODEL CREATED'
+    zero_ops, accum_ops, train_minimize, learning_rate, global_step = create_optimizers(final_loss)
+    print '>>> OPTIMIZER CREATED'
+    train_data = TrainData(locals())
+    print '>>> TRAINING START'
+    train_model(train_data)
+
+'''    
+def __test():
     
     print '>>> STAGE %d TRAINING <<<' % (1 if FLAGS.stage_1 else 2)
     
@@ -67,10 +100,8 @@ def train():
     zero_ops, accum_ops, train_minimize, learning_rate, global_step = create_optimizers(final_loss)
     print '>>> OPTIMIZER CREATED'
     train_data = TrainData(locals())
-    print '>>> TRAINING START'
-    train_model(train_data)
-    
-
+    return train_data
+'''
     
 
 def main(argv=None):

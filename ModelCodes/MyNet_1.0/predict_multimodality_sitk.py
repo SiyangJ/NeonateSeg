@@ -6,6 +6,7 @@ import h5py
 import time
 from patch_extraction import extract_test_patches
 # from postprocess import post_predict
+from util.utils import Dice
 from util.utils import load_nifti, save_nifti
 from util.utils import load_sitk, save_sitk
 from util.utils import pickle_dump, pickle_load
@@ -177,9 +178,9 @@ def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, s
     img_data_t1 = load_sitk(t1_nifti_path)
     img_data_t2 = load_sitk(t2_nifti_path)
     if not FLAGS.stage_1:
-        img_data_dm1, _ = load_sitk(dm1_file_path)
-        img_data_dm2, _ = load_sitk(dm2_file_path)
-        img_data_dm3, _ = load_sitk(dm3_file_path)
+        img_data_dm1 = load_sitk(dm1_file_path)
+        img_data_dm2 = load_sitk(dm2_file_path)
+        img_data_dm3 = load_sitk(dm3_file_path)
     print '>> load nifti image finish..shape=%s' % (img_data_t1.shape, )
     
     d_ori = img_data_t1.shape[0]
@@ -234,9 +235,11 @@ def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, s
     final_segmentation[original_data==0] = 0
     
     final_segmentation = final_segmentation.astype(np.uint8)
+    
+    if save_pred_path is None:
+        return final_segmentation
 
     save_sitk(final_segmentation, save_pred_path)
-
     elapsed = int(time.time() - start_time)
     print('!!! predict patches of 1 image, cost [%3d] seconds ' % (elapsed, ))
 
@@ -277,14 +280,12 @@ def generate_distance_map(file_name):
 ## DONE editing
 def predict_multi_modality_test_images_in_sitk(td):
 
-    # test_path = FLAGS.test_dir
-    # for test_path in [FLAGS.hdf5_train_list_path, FLAGS.hdf5_test_list_path]:
-    
     pred_list = os.path.join(FLAGS.prediction_save_dir,'prediction_stage_1.list')
     if os.path.exists(pred_list):
         print('The list file to store prediction already exists: %s' % pred_list)
         os.remove(pred_list)
     
+    ## Potentially also predict train and validation paths
     for list_path in [FLAGS.hdf5_test_list_path, ]:
         
         dir_list = get_data_list(list_path)
@@ -295,8 +296,8 @@ def predict_multi_modality_test_images_in_sitk(td):
             t2_file_path = _dir[1]
             save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name)
             predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path)
+            
             generate_distance_map(file_name)
-
             with open(pred_list,'a') as f:
                 f.write(t1_file_path)
                 f.write(',')
@@ -312,9 +313,8 @@ def predict_multi_modality_test_images_in_sitk(td):
                     
 def predict_multi_modality_dm_test_images_in_sitk(td):
 
-    # test_path = FLAGS.test_dir
-    # for test_path in [FLAGS.hdf5_train_list_path, FLAGS.hdf5_test_list_path]:
-    assert FLAGS.stage_1, "Can only be used in Stage 2"
+    assert not FLAGS.stage_1, "Can only be used in Stage 2"
+
     pred_list = os.path.join(FLAGS.prediction_save_dir,'prediction_stage_1.list')
     if os.path.exists(pred_list):
         print('The list file to store prediction already exists: %s' % pred_list)
@@ -333,6 +333,7 @@ def predict_multi_modality_dm_test_images_in_sitk(td):
             
             save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name)
             predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path, dm1_file_path, dm2_file_path, dm3_file_path)
+
             with open(pred_list,'a') as f:
                 for _path in _dir:
                     f.write(_path)
@@ -340,6 +341,34 @@ def predict_multi_modality_dm_test_images_in_sitk(td):
                 f.write(os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name))
                 f.write('\n')
 
+def eval_test_images_in_sitk(td):
+    
+    stats_list = []
+    list_path = FLAGS.hdf5_test_list_path
+    dir_list = get_data_list(list_path)
+    for _dir in dir_list:
+        t1_file_path = _dir[0]
+        file_name = t1_file_path.split('/')[-1]
+        t2_file_path = _dir[1]
+        label_file_path = _dir[2]
+        if not FLAGS.stage_1:
+            dm1_file_path = _dir[4]
+            dm2_file_path = _dir[5]
+            dm3_file_path = _dir[6]
+
+        if FLAGS.stage_1:
+            final_segmentation = predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, None)
+        else:
+            final_segmentation = predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, None, dm1_file_path, dm2_file_path, dm3_file_path)
+
+        true_label = load_sitk(label_file_path)
+        stats_list += [Dice(final_segmentation,true_label),]
+    
+    stats_list = np.asarray(stats_list)
+    stats_mean = stats_list.mean(axis=0)
+    
+    return stats_mean
+                    
 def main():
     predict_multi_modality_test_images_in_sitk(None)
     

@@ -3,6 +3,17 @@ import nibabel as nib
 import SimpleITK as sitk
 import numpy as np
 
+def Dice(pred,true,labels=[0,1,2,3]):
+    l = len(labels)
+    ret = np.zeros(l)
+    for i in range(l):
+        lab = labels[i]
+        p = pred==lab
+        t = true==lab
+        ret[i] = 2*np.logical_and(p,t).sum()/(p.sum()+t.sum())
+    return ret
+
+
 def pickle_dump(item, out_file):
     with open(out_file, "wb") as opened_file:
         pickle.dump(item, opened_file)

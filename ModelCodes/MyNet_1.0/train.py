@@ -8,6 +8,8 @@ from copy import deepcopy
 from config import FLAGS
 import re
 
+from predict_multimodality_sitk import eval_test_images_in_sitk
+
 def _save_checkpoint(train_data, batch, log=True):
     td = train_data
     saver = tf.train.Saver()
@@ -18,20 +20,34 @@ def _save_checkpoint(train_data, batch, log=True):
         print("Model saved in file: %s" % save_path)
         print ('Model saved in file: %s' % saver.last_checkpoints)
 
-
-def train_model(train_data):
+def _initialize_variables(train_data):
     td = train_data
-
-    # if the sess is restored from last checkpoint, do not need to 
     if FLAGS.restore_from_last:
         saver = tf.train.Saver()
         model_path = tf.train.latest_checkpoint(FLAGS.last_trained_checkpoint)
         print('**Training**: restore last checkpoint from:%s' % model_path)
         saver.restore(td.sess, model_path)
     else:
-        init_op = tf.global_variables_initializer()
+        try:
+            init_op = td.sess.graph.get_operation_by_name('init')
+        except KeyError as e:
+            init_op = tf.global_variables_initializer()
         print('**Training**: global variable initialization...')
         td.sess.run(init_op)
+        
+def _rewrite_checkpoint_to_best():
+    with open(os.path.join(FLAGS.checkpoint_dir,'checkpoint'),'r+') as _cf:
+        _cs = _cf.read()
+        _cs = re.sub(r'snapshot_.*?"','snapshot_best"',_cs)
+        _cf.seek(0)
+        _cf.write(_cs)
+        _cf.truncate()
+
+def train_model(train_data):
+    td = train_data
+
+    # if the sess is restored from last checkpoint, do not need to 
+    _initialize_variables(td)
 
     lrval       = FLAGS.learning_rate_start
     start_time  = time.time()
@@ -54,7 +70,7 @@ def train_model(train_data):
         if batch % FLAGS.learning_rate_reduce_life == 0:
             lrval *= FLAGS.learning_rate_percentage
         
-        if batch % FLAGS.validate_every_n == 0:
+        if batch % FLAGS.validate_every_n == 0 or (batch==1 and FLAGS.restore_from_last):
             ## Training info
             total_aux1_loss = 0
             total_aux2_loss = 0
@@ -140,6 +156,17 @@ def train_model(train_data):
             print("[%25s], Epoch: [%4d], Validation Main Loss: [%3.3f]" 
                   % (time.ctime(), batch, total_main_loss))
             
+            if FLAGS.show_test_in_training and \
+                (batch % FLAGS.test_every_n == 0 or \
+                (batch==1 and FLAGS.restore_from_last)):
+                
+                stats_mean = eval_test_images_in_sitk(td)
+                summary = tf.Summary(value=[
+                    tf.Summary.Value(tag="Dice_1", simple_value=stats_mean[1]),
+                    tf.Summary.Value(tag="Dice_2", simple_value=stats_mean[2]),
+                    tf.Summary.Value(tag="Dice_3", simple_value=stats_mean[3]),
+                ])
+                td.test_sum_writer.add_summary(summary, batch)  
             
             ## Early stopping check
             
@@ -158,12 +185,8 @@ def train_model(train_data):
                     print '>>> Best batch: [%4d], best loss: [%5.5f], lr: [%1.8f]' % (best_batch,best_loss,best_lr)
                     
                     ## Rewrite the checkpoint file such that it always points to snapshot_best
-                    with open(os.path.join(FLAGS.checkpoint_dir,'checkpoint'),'r+') as _cf:
-                        _cs = _cf.read()
-                        _cs = re.sub(r'snapshot_.*?"','snapshot_best"',_cs)
-                        _cf.seek(0)
-                        _cf.write(_cs)
-                        _cf.truncate()
+                    _rewrite_checkpoint_to_best()
+                    
                     return
                 print '>> EARLY STOP: after %d iterations, still not decreasing' % FLAGS.early_stop_iteration
                 ## Restore model
@@ -208,12 +231,7 @@ def train_model(train_data):
 
     _save_checkpoint(td, batch)
     ## Rewrite the checkpoint file such that it always points to snapshot_best
-    with open(os.path.join(FLAGS.checkpoint_dir,'checkpoint'),'r+') as _cf:
-        _cs = _cf.read()
-        _cs = re.sub(r'snapshot_.*?"','snapshot_best"',_cs)
-        _cf.seek(0)
-        _cf.write(_cs)
-        _cf.truncate()
+    _rewrite_checkpoint_to_best()
     print('>>> Finished training!')
     print '>>> Best batch: [%4d], best loss: [%5.5f], lr: [%1.8f]' % (best_batch,best_loss,best_lr)
 

@@ -1,6 +1,8 @@
 __pycache__/
 JP_6mon_model
 .ipynb_checkpoints/
+
+*events.out.tfevents*
 myData/
 myTrialData/
 NeonateMRISeg/

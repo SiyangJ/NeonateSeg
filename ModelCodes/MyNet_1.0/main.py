@@ -1,13 +1,34 @@
 import tensorflow as tf
-from model import create_model_infant_seg, create_model_infant_t1t2dm123_seg, create_optimizers
+from model import create_optimizers
+
 from train import train_model
 import random
 import numpy as np
 import os
+import sys
 from generator import get_training_and_testing_generators
 from copy import deepcopy
 from config import FLAGS
 
+if 'bern' in FLAGS.network.lower():
+    if FLAGS.stage_1:
+        print ">>> **Network**: BernNet Stage 1"
+        from BernNet import create_model_infant_seg as create_model
+    else:
+        print ">>> **Network**: BernNet Stage 2"
+        from BernNet import create_model_infant_t1t2dm123_seg as create_model
+
+elif 'unet' in FLAGS.network.lower() or 'u-net' in FLAGS.network.lower():
+    if FLAGS.stage_1:
+        if 'early' in FLAGS.network.lower():
+            print ">>> **Network**: UNet Early Fusion"
+            from UNet import create_UNet_early_fusion as create_model
+        else:
+            print ">>> **Network**: UNet Late Fusion"
+            from UNet import create_UNet_late_fusion as create_model
+    else:
+        print 'Not yet finished'
+        sys.exit(0)
 
 def prepare_dirs(delete_train_dir=False):
     # Create checkpoint dir (do not delete anything)
@@ -56,52 +77,56 @@ def train():
     print '>>> STAGE %d TRAINING <<<' % (1 if FLAGS.stage_1 else 2)
     
     prepare_dirs(delete_train_dir=False)
-    if FLAGS.show_test_in_training:
-        sess, summary_writer, val_sum_writer, test_sum_writer = setup_tensorflow()
-    else:
-        sess, summary_writer, val_sum_writer = setup_tensorflow()
 
     if FLAGS.stage_1:
         (tf_t1_input, tf_t2_input, tf_label, 
                 aux1_pred, aux2_pred, main_pred,
                 aux1_loss, aux2_loss, main_loss, 
-                final_loss, gene_vars, main_possibility) = create_model_infant_seg(train_phase=True)
+                final_loss, gene_vars, main_possibility) = create_model(train_phase=True)
     else:
         (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label, 
             aux1_pred, aux2_pred, main_pred,
             aux1_loss, aux2_loss, main_loss, 
-            final_loss, gene_vars, main_possibility) = create_model_infant_t1t2dm123_seg(train_phase=True)
+            final_loss, gene_vars, main_possibility) = create_model(train_phase=True)
     print '>>> MODEL CREATED'
     zero_ops, accum_ops, train_minimize, learning_rate, global_step = create_optimizers(final_loss)
     print '>>> OPTIMIZER CREATED'
+    
+    if FLAGS.show_test_in_training:
+        sess, summary_writer, val_sum_writer, test_sum_writer = setup_tensorflow()
+    else:
+        sess, summary_writer, val_sum_writer = setup_tensorflow()
+    
     train_data = TrainData(locals())
     print '>>> TRAINING START'
     train_model(train_data)
 
-'''    
+    
 def __test():
     
     print '>>> STAGE %d TRAINING <<<' % (1 if FLAGS.stage_1 else 2)
     
     prepare_dirs(delete_train_dir=False)
-    sess, summary_writer, val_sum_writer = setup_tensorflow()
 
     if FLAGS.stage_1:
         (tf_t1_input, tf_t2_input, tf_label, 
                 aux1_pred, aux2_pred, main_pred,
                 aux1_loss, aux2_loss, main_loss, 
-                final_loss, gene_vars, main_possibility) = create_model_infant_seg(train_phase=True)
+                final_loss, gene_vars, main_possibility) = create_model(train_phase=True)
     else:
         (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label, 
             aux1_pred, aux2_pred, main_pred,
             aux1_loss, aux2_loss, main_loss, 
-            final_loss, gene_vars, main_possibility) = create_model_infant_t1t2dm123_seg(train_phase=True)
+            final_loss, gene_vars, main_possibility) = create_model(train_phase=True)
     print '>>> MODEL CREATED'
     zero_ops, accum_ops, train_minimize, learning_rate, global_step = create_optimizers(final_loss)
     print '>>> OPTIMIZER CREATED'
+    
+    _stuff = setup_tensorflow()
+    sess, summary_writer, val_sum_writer = _stuff[:3]
+    
     train_data = TrainData(locals())
     return train_data
-'''
     
 
 def main(argv=None):

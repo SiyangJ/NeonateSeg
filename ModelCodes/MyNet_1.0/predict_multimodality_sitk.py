@@ -55,76 +55,59 @@ def vote_overlapped_patch(predictions, patch_indx, d,h,w):
     final_segmentation = np.argmax(possibilty_map, axis=-1)
     return final_segmentation, possibilty_map
 
-def predict_multi_modality_one_img_without_label(td, t1_patches, t2_patches, index, d,h,w):
-    preds_aux1 = []
-    preds_aux2 = []
+def _predict_input_patches_without_label(td,all_input_patch_list,index, d,h,w,stage_1,train_phase=False):
     preds_main = []
 
     start_time  = time.time()
-    patch_num = t1_patches.shape[0]
+    patch_num = all_input_patch_list[0].shape[0]
     print '>> begin predict likelihood of each patch ..'
-    for _i in  xrange(patch_num):
-        _t1_patch = t1_patches[_i]
-        _t2_patch = t2_patches[_i]
-        _index = index[_i]
+    batch_size = FLAGS.batch_size if train_phase else 1
+    batch_num = int(np.ceil(float(patch_num) / batch_size))
+        
+    for _i in  xrange(batch_num):
+        _to_select = np.arange(_i*batch_size,(_i+1)*batch_size)%patch_num
+        _input_patch = [ np.squeeze(all_patch[_to_select],1)
+                        for all_patch in all_input_patch_list]
 
-        feed_dict = { td.tf_t1_input : _t1_patch, 
-                        td.tf_t2_input : _t2_patch,
-                    }
-        ops = [td.aux1_pred, td.aux2_pred, td.main_pred]
+        if stage_1:
+            feed_dict = { td.tf_t1_input : _input_patch[0], 
+                            td.tf_t2_input : _input_patch[1]}
+        else:
+            feed_dict = { td.tf_t1_input : _input_patch[0], 
+                            td.tf_t2_input : _input_patch[1],
+                            td.tf_dm_input1 : _input_patch[2], 
+                            td.tf_dm_input2 : _input_patch[3], 
+                            td.tf_dm_input3 : _input_patch[4] }
+        ops = [td.aux1_pred, td.aux2_pred, td.main_possibility]
         [aux1_pred, aux2_pred, main_pred] = td.sess.run(ops, feed_dict=feed_dict)
-        preds_aux1.append(aux1_pred)
-        preds_aux2.append(aux2_pred)
         preds_main.append(main_pred)
 
-    patches_pred = np.asarray(preds_main)
+    preds_main = tuple(preds_main)
+    patches_pred = np.vstack(preds_main)
+    patches_pred = patches_pred[:patch_num,:]
+    patches_pred = np.expand_dims(patches_pred,axis=1)
 
     print '>> begin vote in overlapped patch..'
     seg_res, possibilty_map = vote_overlapped_patch(patches_pred, index, d,h,w)
     # seconds
     elapsed = int(time.time() - start_time)
 
-    print('predit patches of 1 iamge, cost [%3d] seconds' % (elapsed))
+    print('predit patches of 1 image, cost [%3d] seconds' % (elapsed))
 
     return seg_res, possibilty_map
 
-def predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, index, d,h,w):
-	preds_aux1 = []
-	preds_aux2 = []
-	preds_main = []
+def predict_multi_modality_one_img_without_label(td, t1_patches, t2_patches, index, d,h,w,train_phase=False):
+    all_input_patch_list = [t1_patches, t2_patches,]
+    seg_res, possibilty_map = _predict_input_patches_without_label(td,all_input_patch_list,index, d,h,w,
+                                                                   True,train_phase=train_phase)
+    return seg_res, possibilty_map
 
-	start_time  = time.time()
-	patch_num = t1_patches.shape[0]
-	print '>> begin predict likelihood of each patch ..'
-	for _i in  xrange(patch_num):
-		_t1_patch = t1_patches[_i]
-		_t2_patch = t2_patches[_i]
-		_dm1_patch = dm1_patches[_i]
-		_dm2_patch = dm2_patches[_i]
-		_dm3_patch = dm3_patches[_i]
-		_index = index[_i]
-
-		feed_dict = { td.tf_t1_input : _t1_patch, 
-						td.tf_t2_input : _t2_patch,
-						td.tf_dm_input1 : _dm1_patch, 
-						td.tf_dm_input2 : _dm2_patch, 
-						td.tf_dm_input3 : _dm3_patch }
-		ops = [td.aux1_pred, td.aux2_pred, td.main_possibility]
-		[aux1_pred, aux2_pred, main_pred] = td.sess.run(ops, feed_dict=feed_dict)
-		preds_aux1.append(aux1_pred)
-		preds_aux2.append(aux2_pred)
-		preds_main.append(main_pred)
-
-	patches_pred = np.asarray(preds_main)
-
-	print '>> begin vote in overlapped patch..'
-	seg_res, possibilty_map = vote_overlapped_patch(patches_pred, index, d,h,w)
-	# seconds
-	elapsed = int(time.time() - start_time)
-
-	print('predit patches of 1 iamge, cost [%3d] seconds' % (elapsed))
-
-	return seg_res, possibilty_map
+def predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, index, d,h,w,train_phase=False):
+    
+    all_input_patch_list = [t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches]
+    seg_res, possibilty_map = _predict_input_patches_without_label(td,all_input_patch_list,index, d,h,w,
+                                                                   False,train_phase=train_phase)
+    return seg_res, possibilty_map
 
 def remove_test_backgrounds(img_data, t2_data, img_data_dm1=None, img_data_dm2=None, img_data_dm3=None):
     if len(img_data.shape) ==4:
@@ -172,7 +155,7 @@ def remove_test_backgrounds(img_data, t2_data, img_data_dm1=None, img_data_dm2=N
     else:
         return (img_data[x_min:x_max, y_min:y_max, z_min:z_max], t2_data[x_min:x_max, y_min:y_max, z_min:z_max], img_data_dm1[x_min:x_max, y_min:y_max, z_min:z_max], img_data_dm2[x_min:x_max, y_min:y_max, z_min:z_max], img_data_dm3[x_min:x_max, y_min:y_max, z_min:z_max],crop_index)
 
-def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, save_pred_path, dm1_file_path=None, dm2_file_path=None, dm3_file_path=None):
+def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, save_pred_path, dm1_file_path=None, dm2_file_path=None, dm3_file_path=None,train_phase=False):
     start_time  = time.time()
     print '>> begin predict nifit image: %s' % (t1_nifti_path)
     img_data_t1 = load_sitk(t1_nifti_path)
@@ -217,9 +200,9 @@ def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, s
         dm2_patches, index, d,h,w = extract_test_patches(dm2_data_rmbg,normalise=False)
         dm3_patches, index, d,h,w = extract_test_patches(dm3_data_rmbg,normalise=False)
     if FLAGS.stage_1:
-        segmentations, possibilty_map =  predict_multi_modality_one_img_without_label(td, t1_patches,t2_patches, index, d,h,w)
+        segmentations, possibilty_map =  predict_multi_modality_one_img_without_label(td, t1_patches,t2_patches, index, d,h,w,train_phase=train_phase)
     else:
-        segmentations, possibilty_map = predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, index, d,h,w)
+        segmentations, possibilty_map = predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, index, d,h,w,train_phase=train_phase)
 
     segmentations = np.asarray(segmentations,  'uint8')
     assert len(segmentations.shape) == 3, '** segmentation result must be in 3-dimension'
@@ -295,6 +278,7 @@ def predict_multi_modality_test_images_in_sitk(td):
             file_name = t1_file_path.split('/')[-1]
             t2_file_path = _dir[1]
             save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name)
+            print t1_file_path, t2_file_path
             predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path)
             
             generate_distance_map(file_name)
@@ -342,9 +326,10 @@ def predict_multi_modality_dm_test_images_in_sitk(td):
         print '>>> Finish predicting list %s' % list_path
     print '>>> Prediction finished!!!'
 
-def eval_test_images_in_sitk(td):
+def eval_test_images_in_sitk(td,train_phase=True):
     
     stats_list = []
+    
     list_path = FLAGS.hdf5_test_list_path
     dir_list = get_data_list(list_path)
     for _dir in dir_list:
@@ -358,9 +343,9 @@ def eval_test_images_in_sitk(td):
             dm3_file_path = _dir[6]
 
         if FLAGS.stage_1:
-            final_segmentation = predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, None)
+            final_segmentation = predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, None, train_phase=train_phase)
         else:
-            final_segmentation = predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, None, dm1_file_path, dm2_file_path, dm3_file_path)
+            final_segmentation = predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, None, dm1_file_path, dm2_file_path, dm3_file_path,train_phase=train_phase)
 
         true_label = load_sitk(label_file_path)
         stats_list += [Dice(final_segmentation,true_label),]

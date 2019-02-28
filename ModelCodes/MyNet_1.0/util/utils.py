@@ -10,7 +10,7 @@ def Dice(pred,true,labels=[0,1,2,3]):
         lab = labels[i]
         p = pred==lab
         t = true==lab
-        ret[i] = 2*np.logical_and(p,t).sum()/(p.sum()+t.sum())
+        ret[i] = 2*float(np.logical_and(p,t).sum())/(p.sum()+t.sum())
     return ret
 
 

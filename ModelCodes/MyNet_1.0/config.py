@@ -14,8 +14,14 @@ CFP.read(CONFIG_DIR)
 
 ARGS = CFP['Default']
 
+tf.app.flags.DEFINE_string('network', ARGS.get('network','BernNet'), 
+                           "The network to use")
+
 tf.app.flags.DEFINE_bool('stage_1', ARGS.getboolean('stage_1',True), 
                          "whether is stage 1; default is True")
+
+if 'unet' in FLAGS.network.lower() or 'u-net' in FLAGS.network.lower():
+    FLAGS.stage_1 = True
 
 tf.app.flags.DEFINE_integer('cls_out', ARGS.getint('cls_out'), 
                             "classfy how many categories")
@@ -114,6 +120,14 @@ tf.app.flags.DEFINE_string('last_trained_checkpoint', ARGS['last_trained_checkpo
                            "The model used for testing")
 tf.app.flags.DEFINE_bool('restore_from_last', ARGS.getboolean('restore_from_last'), 
                          "whether start training from last trained checkpoint")
+
+if FLAGS.restore_from_last:
+    tf.app.flags.DEFINE_bool('freeze_layers', ARGS.getboolean('freeze_layers',False), 
+                         "whether to freeze the layers on the encoder path")
+    if FLAGS.freeze_layers:
+        tf.app.flags.DEFINE_integer('freeze_layers_num', ARGS.getint('freeze_layers_num',-1), 
+                            "Number of layers to freeze")
+                             
 
 ############### Deep supervision######################
 tf.app.flags.DEFINE_float('aux1_weight', ARGS.getfloat('aux1_weight'), 

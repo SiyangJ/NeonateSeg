@@ -1,6 +1,6 @@
 import tensorflow as tf
 # from model import create_model_hip, create_optimizers,create_model_ivd
-from model import create_model_infant_seg, create_model_infant_t1t2dm123_seg, create_optimizers
+from model import create_optimizers
 # from model import create_model_infant_seg_nopooling
 from train import train_model
 import random
@@ -9,6 +9,27 @@ import os
 import sys
 # from generator import get_training_and_testing_generators
 from config import FLAGS
+
+if 'bern' in FLAGS.network.lower():
+    if FLAGS.stage_1:
+        print ">>> **Network**: BernNet Stage 1"
+        from BernNet import create_model_infant_seg as create_model
+    else:
+        print ">>> **Network**: BernNet Stage 2"
+        from BernNet import create_model_infant_t1t2dm123_seg as create_model
+
+elif 'unet' in FLAGS.network.lower() or 'u-net' in FLAGS.network.lower():
+    if FLAGS.stage_1:
+        if 'early' in FLAGS.network.lower():
+            print ">>> **Network**: UNet Early Fusion"
+            from UNet import create_UNet_early_fusion as create_model
+        else:
+            print ">>> **Network**: UNet Late Fusion"
+            from UNet import create_UNet_late_fusion as create_model
+    else:
+        print 'Not yet finished'
+        sys.exit(0)
+
 
 if FLAGS.stage_1:
     if FLAGS.load_test_with_sitk:
@@ -69,12 +90,12 @@ def test():
         (tf_t1_input, tf_t2_input, tf_label, 
                 aux1_pred, aux2_pred, main_pred,
                 aux1_loss, aux2_loss, main_loss, 
-                final_loss, gene_vars, main_possibility) = create_model_infant_seg(train_phase=False)
+                final_loss, gene_vars, main_possibility) = create_model(train_phase=False)
     else:
         (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label, 
             aux1_pred, aux2_pred, main_pred,
             aux1_loss, aux2_loss, main_loss, 
-            final_loss, gene_vars, main_possibility) = create_model_infant_t1t2dm123_seg(train_phase=False)
+            final_loss, gene_vars, main_possibility) = create_model(train_phase=False)
 
     saver = tf.train.Saver()
     model_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)

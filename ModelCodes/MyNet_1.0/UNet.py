@@ -28,6 +28,12 @@ def create_UNet_late_fusion(train_phase=True):
     tf_t1_input = tf.placeholder(tf.float32, shape=input_shape)
     tf_t2_input = tf.placeholder(tf.float32, shape=input_shape)
     tf_label_main = tf.placeholder(tf.int32, shape=label_shape)
+    
+    if not FLAGS.stage_1:
+        tf_dm_input1 = tf.placeholder(tf.float32, shape=input_shape)
+        tf_dm_input2 = tf.placeholder(tf.float32, shape=input_shape)
+        tf_dm_input3 = tf.placeholder(tf.float32, shape=input_shape)
+        tf_dm_input_concat = tf.concat([tf_dm_input1, tf_dm_input2, tf_dm_input3], -1)
 
     # tf_label_main = tf.to_float(tf_label_main)
     tf_label_aux1 = add_maxpool3d('aux1_label', tf.expand_dims(tf.to_float(tf_label_main), -1), stride=4)
@@ -66,16 +72,6 @@ def create_UNet_late_fusion(train_phase=True):
                                                 train_phase=train_phase)
     t1_conv4b = add_conv3d('t1_conv4b', t1_conv4a, conv4_filters, conv4_filters,
                                                 train_phase=train_phase)
-    
-    # t1_pool4 = add_maxpool3d('t1_pool4', t1_conv4b, stride=2)
-    
-    '''
-    conv5_filters = 1024
-    t1_conv5a = add_conv3d('t1_conv5a', t1_pool3, conv3_filters, conv4_filters, 
-                                                train_phase=train_phase)
-    t1_conv5b = add_conv3d('t1_conv5b', t1_conv4a, conv4_filters, conv4_filters,
-                                                train_phase=train_phase)
-    '''
 
 
     ###################### add t2-modality ############################
@@ -110,54 +106,93 @@ def create_UNet_late_fusion(train_phase=True):
                                                 train_phase=train_phase)
     t2_conv4b = add_conv3d('t2_conv4b', t2_conv4a, conv4_filters, conv4_filters,
                                                 train_phase=train_phase)
-    
-    # t2_pool4 = add_maxpool3d('t2_pool4', t2_conv4b, stride=2)
-    
-    '''
-    conv5_filters = 1024
-    t2_conv5a = add_conv3d('t2_conv5a', t2_pool3, conv3_filters, conv4_filters, 
-                                                train_phase=train_phase)
-    t2_conv5b = add_conv3d('t2_conv5b', t2_conv4a, conv4_filters, conv4_filters,
-                                                train_phase=train_phase)
-
-    conv5b = tf.concat([t1_conv5b, t2_conv5b], -1)
-    '''
-    conv4b = tf.concat([t1_conv4b, t2_conv4b], -1)
 
     ###################################################################
 
+    ########################### add dm modality  ###########################################
+    if not FLAGS.stage_1:
+        in_filters = tf_dm_input_concat.shape[-1]
+        conv1_filters = 64
+        dm_conv1a= add_conv3d('dm_conv1a', tf_dm_input_concat, in_filters, conv1_filters, 
+                                                train_phase=train_phase)
+        
+        dm_conv1b= add_conv3d('dm_conv1b', dm_conv1a, conv1_filters, conv1_filters, 
+                                                    train_phase=train_phase)
+        dm_pool1 = add_maxpool3d('dm_pool1', dm_conv1b, stride=2)
 
+        # conv2(a+b)
+        conv2_filters = 128
+        dm_conv2a = add_conv3d('dm_conv2a', dm_pool1, conv1_filters, conv2_filters,
+                                                    train_phase=train_phase )
+        dm_conv2b = add_conv3d('dm_conv2b', dm_conv2a, conv2_filters, conv2_filters, 
+                                                    train_phase=train_phase)
+        dm_pool2 = add_maxpool3d('dm_pool2', dm_conv2b, stride=2)
+
+        # conv3(a+b) 
+        conv3_filters = 256
+        dm_conv3a = add_conv3d('dm_conv3a', dm_pool2, conv2_filters, conv3_filters,
+                                                    train_phase=train_phase)
+        dm_conv3b = add_conv3d('dm_conv3b', dm_conv3a, conv3_filters, conv3_filters, 
+                                                    train_phase=train_phase)
+        dm_pool3 = add_maxpool3d('dm_pool3', dm_conv3b, stride=2)
+
+        #conv4(a+b)
+        conv4_filters = 512
+        dm_conv4a = add_conv3d('dm_conv4a', dm_pool3, conv3_filters, conv4_filters, 
+                                                    train_phase=train_phase)
+        dm_conv4b = add_conv3d('dm_conv4b', dm_conv4a, conv4_filters, conv4_filters,
+                                                    train_phase=train_phase)
+    
+    ################################################################################################
+    
+    if FLAGS.stage_1:
+        conv4b = tf.concat([t1_conv4b, t2_conv4b], -1)
+    else:
+        conv4b = tf.concat([t1_conv4b, t2_conv4b, dm_conv4b], -1)
+    
     # deconv1(a+b+c)
     deconv1_filters = 256
-    deconv1a = add_deconv3d('deconv1a', conv4b, conv4_filters*2, deconv1_filters, 
+    deconv1a = add_deconv3d('deconv1a', conv4b, conv4b.shape[-1], deconv1_filters, 
                                                 stride=2 , train_phase=train_phase)
 
-    concat1 = tf.concat([deconv1a, t1_conv3b, t2_conv3b], -1)
-    deconv1b = add_conv3d('deconv1b', concat1, deconv1_filters + conv3_filters * 2, deconv1_filters,
+    if FLAGS.stage_1:
+        concat1 = tf.concat([deconv1a, t1_conv3b, t2_conv3b], -1)
+    else:
+        concat1 = tf.concat([deconv1a, t1_conv3b, t2_conv3b, dm_conv3b], -1)
+        
+    deconv1b = add_conv3d('deconv1b', concat1, concat1.shape[-1], deconv1_filters,
                                                 filter_size=3,  train_phase=train_phase)
-    deconv1c = add_conv3d('deconv1c', deconv1b, deconv1_filters, deconv1_filters,
+    deconv1c = add_conv3d('deconv1c', deconv1b, deconv1b.shape[-1], deconv1_filters,
                                                 filter_size=3,  train_phase=train_phase)
 
     # deconv2(a+b+c)
     deconv2_filters = 128
-    deconv2a = add_deconv3d('deconv2a', deconv1c, deconv1_filters, deconv2_filters, 
+    deconv2a = add_deconv3d('deconv2a', deconv1c, deconv1c.shape[-1], deconv2_filters, 
                                                 stride=2 , train_phase=train_phase)
-    concat2 = tf.concat( [deconv2a, t1_conv2b, t2_conv2b], -1)
-    deconv2b = add_conv3d('deconv2b', concat2, deconv2_filters + conv2_filters * 2, deconv2_filters,
+    if FLAGS.stage_1:
+        concat2 = tf.concat( [deconv2a, t1_conv2b, t2_conv2b], -1)
+    else:
+        concat2 = tf.concat( [deconv2a, t1_conv2b, t2_conv2b, dm_conv2b], -1)
+        
+    deconv2b = add_conv3d('deconv2b', concat2, concat2.shape[-1], deconv2_filters,
                                                 filter_size=3,  train_phase=train_phase)
-    deconv2c = add_conv3d('deconv2c', deconv2b,deconv2_filters, deconv2_filters,
+    deconv2c = add_conv3d('deconv2c', deconv2b, deconv2b.shape[-1], deconv2_filters,
                                                 filter_size=3,  train_phase=train_phase)
 
 
 
     # deconv3(a+b+c)
     deconv3_filters = 64
-    deconv3a = add_deconv3d('deconv3a', deconv2c, deconv2_filters, deconv3_filters,
+    deconv3a = add_deconv3d('deconv3a', deconv2c, deconv2c.shape[-1], deconv3_filters,
                                                 stride=2 , train_phase=train_phase)
-    concat3 = tf.concat( [deconv3a, t1_conv1b, t2_conv1b], -1)
-    deconv3b = add_conv3d('deconv3b', concat3, deconv3_filters + conv1_filters * 2, deconv3_filters,
+    if FLAGS.stage_1:
+        concat3 = tf.concat( [deconv3a, t1_conv1b, t2_conv1b], -1)
+    else:
+        concat3 = tf.concat( [deconv3a, t1_conv1b, t2_conv1b, dm_conv1b], -1)
+        
+    deconv3b = add_conv3d('deconv3b', concat3, concat3.shape[-1], deconv3_filters,
                                                 filter_size=3,  train_phase=train_phase)
-    deconv3c = add_conv3d('deconv3c', deconv3b, deconv3_filters, deconv3_filters,
+    deconv3c = add_conv3d('deconv3c', deconv3b, deconv3b.shape[-1], deconv3_filters,
                                                 filter_size=3,  train_phase=train_phase)
 
     #output
@@ -208,13 +243,18 @@ def create_UNet_late_fusion(train_phase=True):
         if _var.name[-9:-2] == 'weights': # to exclude 'bias' term
             final_loss = final_loss + FLAGS.L2_loss_weight*tf.nn.l2_loss(_var)
         
-    
-    return (tf_t1_input, tf_t2_input, tf_label_main, 
-            aux1_pred, aux2_pred, main_pred,
-            aux1_loss, aux2_loss, main_loss, 
-            final_loss, gene_vars, main_possibility)
+    if stage_1:
+        return (tf_t1_input, tf_t2_input, tf_label_main, 
+                aux1_pred, aux2_pred, main_pred,
+                aux1_loss, aux2_loss, main_loss, 
+                final_loss, gene_vars, main_possibility)
+    else:
+        return (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label_main, 
+                aux1_pred, aux2_pred, main_pred,
+                aux1_loss, aux2_loss, main_loss, 
+                final_loss, gene_vars, main_possibility)
 
-def create_UNet_early_fusion(train_phase=True):
+def create_UNet_early_fusion(train_phase=True,stage_1=FLAGS.stage_1):
     
     from_pretrain = False if not train_phase else FLAGS.from_pretrain
     num_example = FLAGS.batch_size if train_phase else 1
@@ -235,8 +275,16 @@ def create_UNet_early_fusion(train_phase=True):
     tf_t1_input = tf.placeholder(tf.float32, shape=input_shape)
     tf_t2_input = tf.placeholder(tf.float32, shape=input_shape)
     tf_label_main = tf.placeholder(tf.int32, shape=label_shape)
+    
+    if not stage_1:
+        tf_dm_input1 = tf.placeholder(tf.float32, shape=input_shape)
+        tf_dm_input2 = tf.placeholder(tf.float32, shape=input_shape)
+        tf_dm_input3 = tf.placeholder(tf.float32, shape=input_shape)
 
-    tf_input_concat = tf.concat([tf_t1_input, tf_t2_input,], -1)
+    if stage_1:
+        tf_input_concat = tf.concat([tf_t1_input, tf_t2_input,], -1)
+    else:
+        tf_input_concat = tf.concat([tf_t1_input, tf_t2_input,tf_dm_input1, tf_dm_input2, tf_dm_input3], -1)
     
     tf_label_aux1 = add_maxpool3d('aux1_label', tf.expand_dims(tf.to_float(tf_label_main), -1), stride=4)
     tf_label_aux1 = tf.to_int32(tf.reshape(tf_label_aux1, label_shape1))
@@ -361,8 +409,13 @@ def create_UNet_early_fusion(train_phase=True):
         if _var.name[-9:-2] == 'weights': # to exclude 'bias' term
             final_loss = final_loss + FLAGS.L2_loss_weight*tf.nn.l2_loss(_var)
         
-    
-    return (tf_t1_input, tf_t2_input, tf_label_main, 
-            aux1_pred, aux2_pred, main_pred,
-            aux1_loss, aux2_loss, main_loss, 
-            final_loss, gene_vars, main_possibility)
+    if stage_1:
+        return (tf_t1_input, tf_t2_input, tf_label_main, 
+                aux1_pred, aux2_pred, main_pred,
+                aux1_loss, aux2_loss, main_loss, 
+                final_loss, gene_vars, main_possibility)
+    else:
+        return (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label_main, 
+        aux1_pred, aux2_pred, main_pred,
+        aux1_loss, aux2_loss, main_loss, 
+        final_loss, gene_vars, main_possibility)

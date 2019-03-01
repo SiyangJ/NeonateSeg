@@ -34,7 +34,8 @@ def _initialize_variables(train_data):
             init_op = tf.global_variables_initializer()
         print('**Training**: global variable initialization...')
         td.sess.run(init_op)
-        
+
+## Rewrite the checkpoint file such that it always points to snapshot_best
 def _rewrite_checkpoint_to_best():
     with open(os.path.join(FLAGS.checkpoint_dir,'checkpoint'),'r+') as _cf:
         _cs = _cf.read()
@@ -42,6 +43,30 @@ def _rewrite_checkpoint_to_best():
         _cf.seek(0)
         _cf.write(_cs)
         _cf.truncate()
+        
+def _eval_write(train_data,batch):
+    td = train_data
+    stats_mean = eval_test_images_in_sitk(td)
+    summary = tf.Summary(value=[
+        tf.Summary.Value(tag="Dice_1", simple_value=stats_mean[1]),
+        tf.Summary.Value(tag="Dice_2", simple_value=stats_mean[2]),
+        tf.Summary.Value(tag="Dice_3", simple_value=stats_mean[3]),
+    ])
+    td.test_sum_writer.add_summary(summary, batch)  
+    return stats_mean
+
+def _before_return(train_data,best_batch):
+    td = train_data
+    _rewrite_checkpoint_to_best()
+    if FLAGS.test_after_training:
+        saver = tf.train.Saver()
+        model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_best')
+        print '>> **Test evaluation** after training: restore model from iteration %d at %s' % \
+            (best_batch,model_path)
+        saver.restore(td.sess, model_path)
+        _ret = _eval_write(td,best_batch) 
+        print _ret
+        return _ret
 
 def train_model(train_data):
     td = train_data
@@ -161,13 +186,7 @@ def train_model(train_data):
                 (batch % FLAGS.test_every_n == 0 or \
                 (batch==1 and FLAGS.restore_from_last)):
                 
-                stats_mean = eval_test_images_in_sitk(td)
-                summary = tf.Summary(value=[
-                    tf.Summary.Value(tag="Dice_1", simple_value=stats_mean[1]),
-                    tf.Summary.Value(tag="Dice_2", simple_value=stats_mean[2]),
-                    tf.Summary.Value(tag="Dice_3", simple_value=stats_mean[3]),
-                ])
-                td.test_sum_writer.add_summary(summary, batch)  
+                _eval_write(td,batch)  
             
             ## Early stopping check
             
@@ -185,16 +204,8 @@ def train_model(train_data):
                           (best_batch,FLAGS.early_stop_max_fail))
                     print '>>> Best batch: [%4d], best loss: [%5.5f], lr: [%1.8f]' % (best_batch,best_loss,best_lr)
                     
-                    ## Rewrite the checkpoint file such that it always points to snapshot_best
-                    _rewrite_checkpoint_to_best()
-                    if FLAGS.test_after_training:
-                        saver = tf.train.Saver()
-                        model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_best')
-                        print '>> **Test evaluation** after training: restore model from iteration %d at %s' % \
-                            (best_batch,model_path)
-                        saver.restore(td.sess, model_path)
-                        return eval_test_images_in_sitk(td)
-                    return
+                    return _before_return(td,best_batch)
+                
                 print '>> EARLY STOP: after %d iterations, still not decreasing' % FLAGS.early_stop_iteration
                 ## Restore model
                 saver = tf.train.Saver()
@@ -237,15 +248,8 @@ def train_model(train_data):
             done = True
 
     _save_checkpoint(td, batch)
-    ## Rewrite the checkpoint file such that it always points to snapshot_best
-    _rewrite_checkpoint_to_best()
-    if FLAGS.test_after_training:
-        saver = tf.train.Saver()
-        model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_best')
-        print '>> **Test evaluation** after training: restore model from iteration %d at %s' % \
-            (best_batch,model_path)
-        saver.restore(td.sess, model_path)
-        return eval_test_images_in_sitk(td)
+    
+    return _before_return(td,best_batch)
     print('>>> Finished training!')
     print '>>> Best batch: [%4d], best loss: [%5.5f], lr: [%1.8f]' % (best_batch,best_loss,best_lr)
 

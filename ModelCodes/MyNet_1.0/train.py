@@ -53,6 +53,7 @@ def _eval_write(train_data,batch):
         tf.Summary.Value(tag="Dice_3", simple_value=stats_mean[3]),
     ])
     td.test_sum_writer.add_summary(summary, batch)  
+    print '>>> Epoch %d Test: [%3.3f, %3.3f, %3.3f]' % (batch,stats_mean[1],stats_mean[2],stats_mean[3])
     return stats_mean
 
 def _before_return(train_data,best_batch):
@@ -95,7 +96,15 @@ def train_model(train_data):
         if batch % FLAGS.learning_rate_reduce_life == 0:
             lrval *= FLAGS.learning_rate_percentage
         
-        if batch % FLAGS.validate_every_n == 0 or (batch==1 and FLAGS.restore_from_last):
+        if batch % FLAGS.validate_every_n == 0 or ((batch==1 or batch==2) and FLAGS.restore_from_last):
+            
+            ## Test evaluation info
+            if FLAGS.show_test_in_training and \
+                (batch % FLAGS.test_every_n == 0 or \
+                ((batch==1 or batch==2) and FLAGS.restore_from_last)):
+                
+                _eval_write(td,batch)
+            
             ## Training info
             total_aux1_loss = 0
             total_aux2_loss = 0
@@ -103,13 +112,15 @@ def train_model(train_data):
             td.sess.run(td.zero_ops)
             for i in xrange(FLAGS.accumulate_times):
                 if FLAGS.stage_1:
-                    train_input1, train_input2, train_label = training_generator.next()
+                    train_input_all = training_generator.next()
+                    train_input1, train_input2, train_label = train_input_all[:3]
                     feed_dict = {td.tf_t1_input : train_input1, 
                                  td.tf_t2_input : train_input2,  
                                  td.tf_label: train_label, 
                                  td.learning_rate : lrval}
                 else:
-                    train_input1, train_input2, dm_input1, dm_input2, dm_input3, train_label = training_generator.next()
+                    train_input_all = training_generator.next()
+                    train_input1, train_input2, dm_input1, dm_input2, dm_input3, train_label = train_input_all[:6]
                     feed_dict = {td.tf_t1_input : train_input1, 
                      td.tf_t2_input : train_input2, 
                      td.tf_dm_input1: dm_input1,
@@ -117,6 +128,8 @@ def train_model(train_data):
                      td.tf_dm_input3: dm_input3,
                      td.tf_label: train_label, 
                      td.learning_rate : lrval}
+                if FLAGS.use_error_map:
+                    feed_dict[td.tf_weight_main] = train_input_all[-1]
                 ops = [td.accum_ops, td.aux1_loss, td.aux2_loss, td.main_loss]
                 [_, aux1_loss, aux2_loss, main_loss] = td.sess.run(ops, feed_dict=feed_dict)
                 
@@ -147,19 +160,23 @@ def train_model(train_data):
             total_main_loss = 0
             for i in xrange(FLAGS.val_accumulate_times):               
                 if FLAGS.stage_1:
-                    val_input1, val_input2, val_label = testing_generator.next()
+                    val_input_all = testing_generator.next()
+                    val_input1, val_input2, val_label = val_input_all[:3]
                     feed_dict = {td.tf_t1_input : val_input1, 
                                  td.tf_t2_input : val_input2,  
                                  td.tf_label: val_label}
                 else:
-                    val_input1, val_input2, val_dm_1, val_dm_2, val_dm_3, val_label = testing_generator.next()
+                    val_input_all = testing_generator.next()
+                    val_input1, val_input2, val_dm_1, val_dm_2, val_dm_3, val_label = val_input_all[:6]
                     feed_dict = {td.tf_t1_input : val_input1, 
                              td.tf_t2_input : val_input2,  
                              td.tf_dm_input1: val_dm_1,
                              td.tf_dm_input2: val_dm_2, 
                              td.tf_dm_input3: val_dm_3,
                              td.tf_label    : val_label}
-                
+                if FLAGS.use_error_map:
+                    feed_dict[td.tf_weight_main] = val_input_all[-1]
+                    
                 ops = [td.aux1_loss, td.aux2_loss, td.main_loss]
                 [aux1_loss, aux2_loss, main_loss] = td.sess.run(ops, feed_dict=feed_dict)
                 
@@ -179,14 +196,7 @@ def train_model(train_data):
             td.val_sum_writer.add_summary(summary, batch)  
             
             print("[%25s], Epoch: [%4d], Validation Main Loss: [%3.3f]" 
-                  % (time.ctime(), batch, total_main_loss))
-            
-            ## Test evaluation info
-            if FLAGS.show_test_in_training and \
-                (batch % FLAGS.test_every_n == 0 or \
-                (batch==1 and FLAGS.restore_from_last)):
-                
-                _eval_write(td,batch)  
+                  % (time.ctime(), batch, total_main_loss))  
             
             ## Early stopping check
             
@@ -222,13 +232,15 @@ def train_model(train_data):
             td.sess.run(td.zero_ops)
             for i in xrange(FLAGS.accumulate_times):
                 if FLAGS.stage_1:
-                    train_input1, train_input2, train_label = training_generator.next()
+                    train_input_all = training_generator.next()
+                    train_input1, train_input2, train_label = train_input_all[:3]
                     feed_dict = {td.tf_t1_input : train_input1, 
                                  td.tf_t2_input : train_input2,  
                                  td.tf_label: train_label, 
                                  td.learning_rate : lrval}
                 else:
-                    train_input1, train_input2, dm_input1, dm_input2, dm_input3, train_label = training_generator.next()
+                    train_input_all = training_generator.next()
+                    train_input1, train_input2, dm_input1, dm_input2, dm_input3, train_label = train_input_all[:6]
                     feed_dict = {td.tf_t1_input : train_input1, 
                      td.tf_t2_input : train_input2, 
                      td.tf_dm_input1: dm_input1,
@@ -236,6 +248,8 @@ def train_model(train_data):
                      td.tf_dm_input3: dm_input3,
                      td.tf_label: train_label, 
                      td.learning_rate : lrval}
+                if FLAGS.use_error_map:
+                    feed_dict[td.tf_weight_main] = train_input_all[-1]
                 ops = [td.accum_ops, td.main_loss]
                 [_, main_loss] = td.sess.run(ops, feed_dict=feed_dict)
                 

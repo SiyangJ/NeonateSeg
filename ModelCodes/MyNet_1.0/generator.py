@@ -8,6 +8,7 @@ from config import FLAGS
 
 if FLAGS.load_with_sitk:
     import SimpleITK as sitk
+    from util.utils import load_sitk, save_sitk
 
 import h5py
 import math
@@ -72,7 +73,7 @@ def _get_flip_params():
     flp = np.logical_and(flp,rnd_flp)
     return flp.tolist()
 
-def data_augment_transform(im_T1,im_T2,im_label,return_array=True,im_pred=None):
+def data_augment_transform(im_T1,im_T2,im_label,return_array=True,im_pred=None,im_weight=None):
     ## TODO
     im_T1.SetOrigin([0,0,0])
     im_T2.SetOrigin([0,0,0])
@@ -128,14 +129,21 @@ def data_augment_transform(im_T1,im_T2,im_label,return_array=True,im_pred=None):
     
     resampler.SetInterpolator(sitk.sitkNearestNeighbor)
     arr_label = np.swapaxes(sitk.GetArrayFromImage(resampler.Execute(im_label)),0,2)
+    ret_arrs = (arr_T1,arr_T2,arr_label)
     if im_pred is not None:
         arr_pred = np.swapaxes(sitk.GetArrayFromImage(resampler.Execute(im_pred)),0,2)
-        return arr_T1,arr_T2,arr_label,arr_pred
-    return arr_T1,arr_T2,arr_label
+        ret_arrs += (arr_pred,)
+    if im_weight is not None:
+        arr_weight = np.swapaxes(sitk.GetArrayFromImage(resampler.Execute(im_weight)),0,2)
+        ret_arrs += (arr_weight,)
+    return ret_arrs
 
-def data_augment_transform_dm(im_T1,im_T2,im_label,im_pred,return_array=True):
+def data_augment_transform_dm(im_T1,im_T2,im_label,im_pred,return_array=True,im_weight=None):
     
-    ret_arrs = data_augment_transform(im_T1,im_T2,im_label,return_array=return_array,im_pred=im_pred)
+    ret_arrs = data_augment_transform(im_T1,im_T2,im_label,return_array=return_array,im_pred=im_pred,im_weight=im_weight)
+    if im_weight is not None:
+        arr_weight = ret_arrs[-1]
+        ret_arrs = ret_arrs[:-1]
     import scipy.ndimage as ndimage
     bg_mask_data = np.asarray(ret_arrs[3]==0, np.uint8)
     for _i in [1,2,3]:
@@ -147,7 +155,9 @@ def data_augment_transform_dm(im_T1,im_T2,im_label,im_pred,return_array=True):
         # normalise
         dis_map /= np.max(dis_map)
         ret_arrs += (dis_map,)
-    # ret_arrs = arr_T1,arr_T2,arr_label,arr_pred,dis_map1,dis_map2,dis_map3
+    if im_weight is not None:
+        ret_arrs += (arr_weight,)
+    # ret_arrs = arr_T1,arr_T2,arr_label,arr_pred,dis_map1,dis_map2,dis_map3,(arr_weight)
     return ret_arrs
 
 def data_random_generator(hdf5_list, 
@@ -162,6 +172,8 @@ def data_random_generator(hdf5_list,
     '''
     patch_size = parse_patch_size(patch_size_str)
     
+    print '>>> Generating data from %s' % hdf5_list
+    
     ################ Preload Data
     if FLAGS.preload_data and FLAGS.load_with_sitk:
         if for_training and FLAGS.augmentation:
@@ -169,7 +181,7 @@ def data_random_generator(hdf5_list,
                          for _local_file_idx in _local_file] 
                         for _local_file in hdf5_list]
         else:
-            all_data = [[np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file_idx)),0,2)
+            all_data = [[load_sitk(_local_file_idx)
                          for _local_file_idx in _local_file] 
                         for _local_file in hdf5_list]            
         print '>>> Finished **Preloading Data**'
@@ -180,18 +192,35 @@ def data_random_generator(hdf5_list,
         if for_training and FLAGS.augmentation and _epoch % FLAGS.augmentation_per_n_epoch==0:
             ## Construct an array of augmented images
             if FLAGS.stage_1:
-                augmented_data = [list(data_augment_transform(_original_image[0],
-                                                              _original_image[1],
-                                                              _original_image[2],
-                                                              return_array=True))
-                                  for _original_image in all_data]
+                if not FLAGS.use_error_map:
+                    augmented_data = [list(data_augment_transform(_original_image[0],
+                                                                  _original_image[1],
+                                                                  _original_image[2],
+                                                                  return_array=True))
+                                      for _original_image in all_data]
+                else:
+                    augmented_data = [list(data_augment_transform(_original_image[0],
+                                                                  _original_image[1],
+                                                                  _original_image[2],
+                                                                  _original_image[-1],
+                                                                  return_array=True))
+                                      for _original_image in all_data]
             else:
-                augmented_data = [list(data_augment_transform_dm(_original_image[0],
-                                                              _original_image[1],
-                                                              _original_image[2],
-                                                              _original_image[3],
-                                                              return_array=True))
-                                  for _original_image in all_data]
+                if not FLAGS.use_error_map:
+                    augmented_data = [list(data_augment_transform_dm(_original_image[0],
+                                                                  _original_image[1],
+                                                                  _original_image[2],
+                                                                  _original_image[3],
+                                                                  return_array=True))
+                                      for _original_image in all_data]
+                else:
+                    augmented_data = [list(data_augment_transform_dm(_original_image[0],
+                                                                  _original_image[1],
+                                                                  _original_image[2],
+                                                                  _original_image[3],
+                                                                  _original_image[-1],
+                                                                  return_array=True))
+                                      for _original_image in all_data]
             print '>>> Finished **Data Augmentation the %d th time**' % _epoch
         
         if for_training and FLAGS.augmentation:
@@ -206,20 +235,24 @@ def data_random_generator(hdf5_list,
                              else hdf5_list)):            
             if FLAGS.load_with_sitk:
                 if FLAGS.preload_data:
-                    if FLAGS.stage_1:
-                        img_data_t1,img_data_t2,img_label = _local_file
-                    else:
-                        img_data_t1,img_data_t2,img_label,_,img_dm1,img_dm2,img_dm3 = _local_file
+                    img_data_t1,img_data_t2,img_label = _local_file[:3]                    
+                    if not FLAGS.stage_1:
+                        img_dm1,img_dm2,img_dm3 = _local_file[[4,5,6]]
                         img_dm_list = [img_dm1,img_dm2,img_dm3]
+                    if FLAGS.use_error_map:
+                        img_weight = _local_file[-1]
                 else:
-                    img_data_t1 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[0])),0,2)
-                    img_data_t2 = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[1])),0,2)
-                    img_label   = np.swapaxes(sitk.GetArrayFromImage(sitk.ReadImage(_local_file[2])),0,2)
+                    img_data_t1 = load_sitk(_local_file[0])
+                    img_data_t2 = load_sitk(_local_file[1])
+                    img_label   = load_sitk(_local_file[2])
+                    if FLAGS.use_error_map:
+                        img_weight = load_sitk(_local_file[-1])
                     if not FLAGS.stage_1:
                         img_dm_list = [np.swapaxes(sitk.GetArrayFromImage(
                             sitk.ReadImage(_local_file[_i])),0,2) for _i in [4,5,6]]
                     
             else:
+                assert not FLAGS.use_error_map
                 #print ('generate random patch from file %s ...' % _local_file)
                 file_handle   = h5py.File(_local_file, 'r')
                 img_data_t1 = np.asarray(file_handle['t1data'],'float')
@@ -234,6 +267,8 @@ def data_random_generator(hdf5_list,
             img_data_t1 = img_data_t1[np.newaxis, np.newaxis, ... ]
             img_data_t2 = img_data_t2[np.newaxis, np.newaxis, ... ]
             img_label = img_label[np.newaxis, np.newaxis, ... ]
+            if FLAGS.use_error_map:
+                img_weight = img_weight[np.newaxis, np.newaxis, ... ]
             if not FLAGS.stage_1:
                 img_dm_list = [_dm[np.newaxis, np.newaxis, ... ]for _dm in img_dm_list]
             
@@ -252,6 +287,7 @@ def data_random_generator(hdf5_list,
                 x1_list = list()
                 x2_list = list()
                 y_list = list()
+                weight_list = list() if FLAGS.use_error_map else None
                 if not FLAGS.stage_1:
                     dm_lists = [list(),list(),list()]
                 for _ in xrange(batch_size):
@@ -274,6 +310,11 @@ def data_random_generator(hdf5_list,
                                             h_ran : h_ran+patch_size[1],
                                             w_ran: w_ran+patch_size[2]]
                     random_crop_truth = np.asarray(random_crop_truth)
+                    if FLAGS.use_error_map:
+                        random_crop_weight = img_weight[0,0,d_ran : d_ran+patch_size[0], 
+                                                h_ran : h_ran+patch_size[1],
+                                                w_ran: w_ran+patch_size[2]]
+                        random_crop_weight = np.asarray(random_crop_weight)
                     if not FLAGS.stage_1:
                         random_crop_data_dm_list = [_dm[0,0,d_ran : d_ran+patch_size[0], 
                                                 h_ran : h_ran+patch_size[1],
@@ -289,14 +330,17 @@ def data_random_generator(hdf5_list,
                     x1_list.append(random_crop_data_t1)
                     x2_list.append(random_crop_data_t2)
                     y_list.append(random_crop_truth)
+                    if FLAGS.use_error_map:
+                        weight_list.append(random_crop_weight)
                     if not FLAGS.stage_1:
                         for _i in xrange(3):
                             dm_lists[_i].append(random_crop_data_dm_list[_i])
                 ##print 'A new patch is generated'
                 if FLAGS.stage_1:
-                    yield convert_data_multimodality(x1_list, x2_list, y_list)
+                    yield convert_data_multimodality(x1_list, x2_list, y_list, weight_list=weight_list)
                 else:
-                    yield convert_data_distancemap(x1_list, x2_list,dm_lists[0],dm_lists[1],dm_lists[2],y_list)
+                    yield convert_data_distancemap(x1_list, x2_list,dm_lists[0],dm_lists[1],dm_lists[2],y_list, 
+                                                   weight_list=weight_list)
 
 def get_data_list(list_file,shuffle_list=True):
     if not os.path.exists(list_file):
@@ -370,20 +414,24 @@ def convert_data(train_input, train_label):
     return train_input2, train_label
 
 
-def convert_data_multimodality(x1_list, x2_list, y_list):
+def convert_data_multimodality(x1_list, x2_list, y_list,weight_list=None):
     x1_list = np.asarray(x1_list)
     x2_list = np.asarray(x2_list)
     y_list = np.asarray(y_list)
-
+    
     t1_data = normalize_data_storage(x1_list)
     t1_data = t1_data[..., np.newaxis]
 
     t2_data = normalize_data_storage(x2_list)
     t2_data = t2_data[..., np.newaxis]
 
-    return t1_data, t2_data, y_list
+    if weight_list is not None:
+        weight_list = np.asarray(weight_list)
+        return t1_data, t2_data, y_list, weight_list
+    else:
+        return t1_data, t2_data, y_list
 
-def convert_data_distancemap(x1_list, x2_list,dm1_list, dm2_list,dm3_list,y_list):
+def convert_data_distancemap(x1_list, x2_list,dm1_list, dm2_list,dm3_list,y_list,weight_list=None):
     dm1_list = np.asarray(dm1_list)
     dm2_list = np.asarray(dm2_list)
     dm3_list = np.asarray(dm3_list)
@@ -392,18 +440,17 @@ def convert_data_distancemap(x1_list, x2_list,dm1_list, dm2_list,dm3_list,y_list
     dm2_data = dm2_list[..., np.newaxis]
     dm3_data = dm3_list[..., np.newaxis]
     
-    t1_data,t2_data,y_list = convert_data_multimodality(x1_list, x2_list, y_list)
-
-    return t1_data, t2_data,dm1_data, dm2_data,dm3_data, y_list
+    if weight_list is not None:
+        t1_data,t2_data,y_list,weight_list = convert_data_multimodality(x1_list, x2_list, y_list, weight_list=weight_list)
+        return t1_data, t2_data,dm1_data, dm2_data,dm3_data, y_list, weight_list
+    else:
+        t1_data,t2_data,y_list = convert_data_multimodality(x1_list, x2_list, y_list)
+        return t1_data, t2_data,dm1_data, dm2_data,dm3_data, y_list
 
 def main():
     training_generator, testing_generator = get_training_and_testing_generators()
     train_input1,  train_input2,  train_label = training_generator.next()
     print train_input1.shape
-
-
-
-
 
 if __name__ == '__main__':
     main()

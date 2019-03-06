@@ -5,7 +5,7 @@ from util.utils import parse_patch_size,parse_class_weights
 
 from config import FLAGS
 
-from layers import _weight_variable, _bias_variable, cal_loss, add_conv3d, add_deconv3d, add_maxpool3d, _get_var_list
+from model import _weight_variable, _bias_variable, cal_loss, add_conv3d, add_deconv3d, add_maxpool3d, _get_var_list
 
 DTYPE = tf.float32
 
@@ -224,11 +224,22 @@ def create_UNet_late_fusion(train_phase=True):
 
     new_vars = tf.global_variables()
     gene_vars = list(set(new_vars) - set(old_vars))
+    
+    if FLAGS.use_error_map:
+        tf_weight_main = tf.placeholder(tf.float32, shape=label_shape)
+        tf_weight_aux1 = add_maxpool3d('aux1_weight', tf.expand_dims(tf.to_float(tf_weight_main), -1), stride=4)
+        tf_weight_aux1 = tf.reshape(tf_weight_aux1, label_shape1)
+        tf_weight_aux2 = add_maxpool3d('aux2_weight', tf.expand_dims(tf.to_float(tf_weight_main), -1), stride=2)
+        tf_weight_aux2 = tf.reshape(tf_weight_aux2, label_shape2)
 
-
-    aux1_loss = cal_loss(aux1_pred, tf_label_aux1)
-    aux2_loss = cal_loss(aux2_pred, tf_label_aux2)
-    main_loss = cal_loss(main_pred, tf_label_main)
+        aux1_loss = cal_loss(aux1_pred, tf_label_aux1, additional_weights=tf_weight_aux1)
+        aux2_loss = cal_loss(aux2_pred, tf_label_aux2, additional_weights=tf_weight_aux2)
+        main_loss = cal_loss(main_pred, tf_label_main, additional_weights=tf_weight_main)
+        
+    else:
+        aux1_loss = cal_loss(aux1_pred, tf_label_aux1)
+        aux2_loss = cal_loss(aux2_pred, tf_label_aux2)
+        main_loss = cal_loss(main_pred, tf_label_main)
 
 
     final_loss = aux1_loss*FLAGS.aux1_weight + aux2_loss*FLAGS.aux2_weight \
@@ -243,16 +254,15 @@ def create_UNet_late_fusion(train_phase=True):
         if _var.name[-9:-2] == 'weights': # to exclude 'bias' term
             final_loss = final_loss + FLAGS.L2_loss_weight*tf.nn.l2_loss(_var)
         
-    if stage_1:
-        return (tf_t1_input, tf_t2_input, tf_label_main, 
+    model_ret = (tf_t1_input, tf_t2_input, tf_label_main, 
                 aux1_pred, aux2_pred, main_pred,
                 aux1_loss, aux2_loss, main_loss, 
                 final_loss, gene_vars, main_possibility)
-    else:
-        return (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label_main, 
-                aux1_pred, aux2_pred, main_pred,
-                aux1_loss, aux2_loss, main_loss, 
-                final_loss, gene_vars, main_possibility)
+    if not FLAGS.stage_1:
+        model_ret += (tf_dm_input1, tf_dm_input2, tf_dm_input3)
+    if FLAGS.use_error_map:
+        model_ret += (tf_weight_main,)
+    return model_ret
 
 def create_UNet_early_fusion(train_phase=True,stage_1=FLAGS.stage_1):
     
@@ -393,10 +403,22 @@ def create_UNet_early_fusion(train_phase=True,stage_1=FLAGS.stage_1):
 
     new_vars = tf.global_variables()
     gene_vars = list(set(new_vars) - set(old_vars))
+    
+    if FLAGS.use_error_map:
+        tf_weight_main = tf.placeholder(tf.float32, shape=label_shape)
+        tf_weight_aux1 = add_maxpool3d('aux1_weight', tf.expand_dims(tf.to_float(tf_weight_main), -1), stride=4)
+        tf_weight_aux1 = tf.reshape(tf_weight_aux1, label_shape1)
+        tf_weight_aux2 = add_maxpool3d('aux2_weight', tf.expand_dims(tf.to_float(tf_weight_main), -1), stride=2)
+        tf_weight_aux2 = tf.reshape(tf_weight_aux2, label_shape2)
 
-    aux1_loss = cal_loss(aux1_pred, tf_label_aux1)
-    aux2_loss = cal_loss(aux2_pred, tf_label_aux2)
-    main_loss = cal_loss(main_pred, tf_label_main)
+        aux1_loss = cal_loss(aux1_pred, tf_label_aux1, additional_weights=tf_weight_aux1)
+        aux2_loss = cal_loss(aux2_pred, tf_label_aux2, additional_weights=tf_weight_aux2)
+        main_loss = cal_loss(main_pred, tf_label_main, additional_weights=tf_weight_main)
+        
+    else:
+        aux1_loss = cal_loss(aux1_pred, tf_label_aux1)
+        aux2_loss = cal_loss(aux2_pred, tf_label_aux2)
+        main_loss = cal_loss(main_pred, tf_label_main)
 
     final_loss = aux1_loss*FLAGS.aux1_weight + aux2_loss*FLAGS.aux2_weight \
                                              + main_loss*FLAGS.main_weight
@@ -408,14 +430,13 @@ def create_UNet_early_fusion(train_phase=True,stage_1=FLAGS.stage_1):
         # to use L2 loss, all the variables must be with the name of "weights"
         if _var.name[-9:-2] == 'weights': # to exclude 'bias' term
             final_loss = final_loss + FLAGS.L2_loss_weight*tf.nn.l2_loss(_var)
-        
-    if stage_1:
-        return (tf_t1_input, tf_t2_input, tf_label_main, 
+    
+    model_ret = (tf_t1_input, tf_t2_input, tf_label_main, 
                 aux1_pred, aux2_pred, main_pred,
                 aux1_loss, aux2_loss, main_loss, 
                 final_loss, gene_vars, main_possibility)
-    else:
-        return (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label_main, 
-        aux1_pred, aux2_pred, main_pred,
-        aux1_loss, aux2_loss, main_loss, 
-        final_loss, gene_vars, main_possibility)
+    if not FLAGS.stage_1:
+        model_ret += (tf_dm_input1, tf_dm_input2, tf_dm_input3)
+    if FLAGS.use_error_map:
+        model_ret += (tf_weight_main,)
+    return model_ret

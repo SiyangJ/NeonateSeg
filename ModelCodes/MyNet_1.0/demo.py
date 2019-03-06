@@ -71,9 +71,7 @@ def setup_tensorflow():
     random.seed(FLAGS.random_seed)
     np.random.seed(FLAGS.random_seed)
 
-    summary_writer = tf.summary.FileWriter('%s' % (FLAGS.checkpoint_dir,), sess.graph_def)
-
-    return sess, summary_writer
+    return sess
 
 
 
@@ -84,18 +82,19 @@ class TestData(object):
 
 def test():
     prepare_dirs(delete_train_dir=False)
-    sess, summary_writer = setup_tensorflow()
+    sess = setup_tensorflow()
     # here for test, batch_size of tf_input is 1
-    if FLAGS.stage_1:
-        (tf_t1_input, tf_t2_input, tf_label, 
-                aux1_pred, aux2_pred, main_pred,
-                aux1_loss, aux2_loss, main_loss, 
-                final_loss, gene_vars, main_possibility) = create_model(train_phase=False)
-    else:
-        (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label, 
+    
+    model_ret = create_model(train_phase=False)
+    
+    (tf_t1_input, tf_t2_input, tf_label, 
             aux1_pred, aux2_pred, main_pred,
             aux1_loss, aux2_loss, main_loss, 
-            final_loss, gene_vars, main_possibility) = create_model(train_phase=False)
+            final_loss, gene_vars, main_possibility) = model_ret[:12]
+    if not FLAGS.stage_1:
+        tf_dm_input1, tf_dm_input2, tf_dm_input3 = model_ret[12:15]
+    if FLAGS.use_error_map:
+        tf_weight_main = model_ret[-1]
 
     saver = tf.train.Saver()
     model_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
@@ -115,6 +114,32 @@ def test():
         else:
             predict_multi_modality_dm_test_images_in_nifti(test_data)
     
+def evaluate():
+    prepare_dirs(delete_train_dir=False)
+    sess = setup_tensorflow()
+    # here for test, batch_size of tf_input is 1
+    
+    model_ret = create_model(train_phase=False)
+    
+    (tf_t1_input, tf_t2_input, tf_label, 
+            aux1_pred, aux2_pred, main_pred,
+            aux1_loss, aux2_loss, main_loss, 
+            final_loss, gene_vars, main_possibility) = model_ret[:12]
+    if not FLAGS.stage_1:
+        tf_dm_input1, tf_dm_input2, tf_dm_input3 = model_ret[12:15]
+    if FLAGS.use_error_map:
+        tf_weight_main = model_ret[-1]
+
+    saver = tf.train.Saver()
+    model_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
+    print('saver restore from:%s' % model_path)
+    saver.restore(sess, model_path)
+    
+    test_data = TestData(locals())
+    
+    from predict_multimodality_sitk import eval_test_images_in_sitk
+    
+    return eval_test_images_in_sitk(test_data,train_phase=False)
 
 def main(argv=None):
     print ('>> start testing phase...')

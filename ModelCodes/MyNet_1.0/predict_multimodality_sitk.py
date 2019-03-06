@@ -260,6 +260,31 @@ def generate_distance_map(file_name):
         ouput_file = os.path.join(FLAGS.prediction_save_dir,'distance_map_cls%d-%s'%(_i,file_name))
         extract_distance_map(input_file, bg_mask_file, ouput_file)
 
+def generate_error_map(pred_path,true_path,file_name,prediction_save_dir=FLAGS.prediction_save_dir):
+    
+    output_file = os.path.join(prediction_save_dir,'error_map-%s'%(file_name))
+    print '>>> Generating error map: %s' % (file_name)
+    print '  > prediction: %s' % (pred_path)
+    print '  > ground truth: %s' % (true_path)
+    print '  > ouput file: %s' % (output_file)
+    pred_data = load_sitk(pred_path)
+    true_data = load_sitk(true_path)
+    
+    raw_error_map = (pred_data!=true_data).astype(np.float32)
+    
+    ## TODO Consider different filtering.
+    from scipy.ndimage.filters import convolve
+    kernel_size = FLAGS.error_map_kernel_size
+    if FLAGS.error_map_kernel == 'ones':
+        error_filter = np.full((kernel_size,kernel_size,kernel_size),1)
+        error_map = convolve(raw_error_map,error_filter,mode='constant',cval=0.0)
+    else:
+        print 'Not implemented'
+    
+    error_map[error_map==0] = FLAGS.error_map_correct_weight
+    
+    save_sitk(error_map, output_file)
+    
 ## DONE editing
 def predict_multi_modality_test_images_in_sitk(td):
 
@@ -282,6 +307,10 @@ def predict_multi_modality_test_images_in_sitk(td):
             predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path)
             
             generate_distance_map(file_name)
+            if FLAGS.output_error_map:
+                truth_path = _dir[2]
+                generate_error_map(save_pred_path,truth_path,file_name)
+            
             with open(pred_list,'a') as f:
                 f.write(t1_file_path)
                 f.write(',')
@@ -291,10 +320,72 @@ def predict_multi_modality_test_images_in_sitk(td):
                 f.write(',')
                 f.write(os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name))
                 f.write(',')
-                for _i,_c in zip([1,2,3],[',',',','\n']):
+                for _i,_c in zip([1,2,3],[',',',','']):
                     f.write(os.path.join(FLAGS.prediction_save_dir,'distance_map_cls%d-%s'%(_i,file_name)))
                     f.write(_c)
-                    
+                if FLAGS.output_error_map:
+                    f.write(',')
+                    f.write(os.path.join(FLAGS.prediction_save_dir,'error_map-%s'%(file_name)))
+                f.write('\n')
+        print '>>> Finish predicting list %s' % list_path
+    print '>>> Prediction finished!!!'
+
+def regenerate_error_map(prediction_save_dir=FLAGS.prediction_save_dir,new_prediction_file=False):
+    pred_list = os.path.join(prediction_save_dir,'prediction_stage_1.list')
+    assert os.path.exists(pred_list),'The list file to store prediction does not exist: %s' % pred_list
+
+    dir_list = get_data_list(pred_list)
+    if new_prediction_file:
+        os.remove(pred_list)
+    
+    for _dir in dir_list:
+        t1_file_path = _dir[0]
+        file_name = t1_file_path.split('/')[-1]
+        
+        save_pred_path = _dir[3]
+        truth_path = _dir[2]
+        generate_error_map(save_pred_path,truth_path,file_name,prediction_save_dir=prediction_save_dir)
+
+        if new_prediction_file:
+            with open(pred_list,'a') as f:
+                for _i in xrange(7):
+                    f.write(_dir[_i])
+                    f.write(',')
+                f.write(os.path.join(prediction_save_dir,'error_map-%s'%(file_name)))
+                f.write('\n')
+                
+    print '>>> Finish regenerating error maps <<<'
+    
+def split_data(test_num=1,val_num=8,data_list=None):
+    if data_list is None:
+        data_list = os.path.join(FLAGS.prediction_save_dir,'prediction_stage_1.list')
+    assert os.path.exists(data_list),'The list file to split does not exist: %s' % data_list
+
+    dir_list = get_data_list(data_list)
+    for _dir in dir_list:
+        t1_file_path = _dir[0]
+        file_name = t1_file_path.split('/')[-1]
+        
+        if str(test_num) in file_name:
+            split_name = 'test'
+        elif str(val_num) in file_name:
+            split_name = 'validation'
+        else:
+            split_name = 'train'
+            
+        cur_list = data_list[:-5] + '_' + split_name + '.list'
+        with open(cur_list,'a') as f:
+            _dir_len = len(_dir)
+            for _i in xrange(_dir_len):
+                f.write(_dir[_i])
+                if _i<_dir_len-1:
+                    f.write(',')
+                else:
+                    f.write('\n')
+    
+    print '>>> Finish splitting data <<<'
+    
+    
 def predict_multi_modality_dm_test_images_in_sitk(td):
 
     assert not FLAGS.stage_1, "Can only be used in Stage 2"
@@ -326,17 +417,23 @@ def predict_multi_modality_dm_test_images_in_sitk(td):
         print '>>> Finish predicting list %s' % list_path
     print '>>> Prediction finished!!!'
 
-def eval_test_images_in_sitk(td,train_phase=True):
+def eval_test_images_in_sitk(td,train_phase=True,_debug=False):
     
     stats_list = []
     
     list_path = FLAGS.hdf5_test_list_path
     dir_list = get_data_list(list_path)
+    
+    if _debug:
+        final_seg_list = []
+        true_label_list = []
+    
     for _dir in dir_list:
         t1_file_path = _dir[0]
         file_name = t1_file_path.split('/')[-1]
         t2_file_path = _dir[1]
         label_file_path = _dir[2]
+        print '>>> Begin evaluating with ground truth: %s' % (label_file_path)
         if not FLAGS.stage_1:
             dm1_file_path = _dir[4]
             dm2_file_path = _dir[5]
@@ -348,11 +445,17 @@ def eval_test_images_in_sitk(td,train_phase=True):
             final_segmentation = predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, None, dm1_file_path, dm2_file_path, dm3_file_path,train_phase=train_phase)
 
         true_label = load_sitk(label_file_path)
+        
+        if _debug:
+            final_seg_list += [final_segmentation,]
+            true_label_list += [true_label,]
+        
         stats_list += [Dice(final_segmentation,true_label),]
     
     stats_list = np.asarray(stats_list)
     stats_mean = stats_list.mean(axis=0)
-    
+    if _debug:
+        return stats_list, true_label_list, final_seg_list
     return stats_mean
                     
 def main():

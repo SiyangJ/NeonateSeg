@@ -5,7 +5,7 @@ from util.utils import parse_patch_size,parse_class_weights
 
 from config import FLAGS
 
-from layers import _weight_variable, _bias_variable, cal_loss, add_conv3d, add_deconv3d, add_maxpool3d, _get_var_list
+from model import _weight_variable, _bias_variable, cal_loss, add_conv3d, add_deconv3d, add_maxpool3d, _get_var_list
 
 DTYPE = tf.float32
 
@@ -166,12 +166,21 @@ def create_model_infant_seg(train_phase=True):
     new_vars = tf.global_variables()
     gene_vars = list(set(new_vars) - set(old_vars))
 
+    if FLAGS.use_error_map:
+        tf_weight_main = tf.placeholder(tf.float32, shape=label_shape)
+        tf_weight_aux1 = add_maxpool3d('aux1_weight', tf.expand_dims(tf.to_float(tf_weight_main), -1), stride=4)
+        tf_weight_aux1 = tf.reshape(tf_weight_aux1, label_shape1)
+        tf_weight_aux2 = add_maxpool3d('aux2_weight', tf.expand_dims(tf.to_float(tf_weight_main), -1), stride=2)
+        tf_weight_aux2 = tf.reshape(tf_weight_aux2, label_shape2)
 
-
-
-    aux1_loss = cal_loss(aux1_pred, tf_label_aux1)
-    aux2_loss = cal_loss(aux2_pred, tf_label_aux2)
-    main_loss = cal_loss(main_pred, tf_label_main)
+        aux1_loss = cal_loss(aux1_pred, tf_label_aux1, td=td, additional_weights=tf_weight_aux1)
+        aux2_loss = cal_loss(aux2_pred, tf_label_aux2, td=td, additional_weights=tf_weight_aux2)
+        main_loss = cal_loss(main_pred, tf_label_main, td=td, additional_weights=tf_weight_main)
+        
+    else:
+        aux1_loss = cal_loss(aux1_pred, tf_label_aux1, td=td)
+        aux2_loss = cal_loss(aux2_pred, tf_label_aux2, td=td)
+        main_loss = cal_loss(main_pred, tf_label_main, td=td)
 
 
     final_loss = aux1_loss*FLAGS.aux1_weight + aux2_loss*FLAGS.aux2_weight \
@@ -187,11 +196,13 @@ def create_model_infant_seg(train_phase=True):
         if _var.name[-9:-2] == 'weights': # to exclude 'bias' term
             final_loss = final_loss + FLAGS.L2_loss_weight*tf.nn.l2_loss(_var)
         
-    
-    return (tf_t1_input, tf_t2_input, tf_label_main, 
-            aux1_pred, aux2_pred, main_pred,
-            aux1_loss, aux2_loss, main_loss, 
-            final_loss, gene_vars, main_possibility)
+    model_ret = (tf_t1_input, tf_t2_input, tf_label_main, 
+                aux1_pred, aux2_pred, main_pred,
+                aux1_loss, aux2_loss, main_loss, 
+                final_loss, gene_vars, main_possibility)
+    if FLAGS.use_error_map:
+        model_ret += (tf_weight_main,)
+    return model_ret
 
 def create_model_infant_t1t2dm123_seg(train_phase=True):
     
@@ -396,12 +407,21 @@ def create_model_infant_t1t2dm123_seg(train_phase=True):
     new_vars = tf.global_variables()
     gene_vars = list(set(new_vars) - set(old_vars))
 
+    if FLAGS.use_error_map:
+        tf_weight_main = tf.placeholder(tf.float32, shape=label_shape)
+        tf_weight_aux1 = add_maxpool3d('aux1_weight', tf.expand_dims(tf.to_float(tf_weight_main), -1), stride=4)
+        tf_weight_aux1 = tf.reshape(tf_weight_aux1, label_shape1)
+        tf_weight_aux2 = add_maxpool3d('aux2_weight', tf.expand_dims(tf.to_float(tf_weight_main), -1), stride=2)
+        tf_weight_aux2 = tf.reshape(tf_weight_aux2, label_shape2)
 
-
-
-    aux1_loss = cal_loss(aux1_pred, tf_label_aux1)
-    aux2_loss = cal_loss(aux2_pred, tf_label_aux2)
-    main_loss = cal_loss(main_pred, tf_label_main)
+        aux1_loss = cal_loss(aux1_pred, tf_label_aux1, td=td, additional_weights=tf_weight_aux1)
+        aux2_loss = cal_loss(aux2_pred, tf_label_aux2, td=td, additional_weights=tf_weight_aux2)
+        main_loss = cal_loss(main_pred, tf_label_main, td=td, additional_weights=tf_weight_main)
+        
+    else:
+        aux1_loss = cal_loss(aux1_pred, tf_label_aux1, td=td)
+        aux2_loss = cal_loss(aux2_pred, tf_label_aux2, td=td)
+        main_loss = cal_loss(main_pred, tf_label_main, td=td)
 
     final_loss = aux1_loss*FLAGS.aux1_weight + aux2_loss*FLAGS.aux2_weight \
                                              + main_loss*FLAGS.main_weight
@@ -414,31 +434,12 @@ def create_model_infant_t1t2dm123_seg(train_phase=True):
         if _var.name[-9:-2] == 'weights': # to exclude 'bias' term
             final_loss = final_loss + FLAGS.L2_loss_weight*tf.nn.l2_loss(_var)
         
-    
-    return (tf_t1_input, tf_t2_input, tf_dm_input1, tf_dm_input2, tf_dm_input3, tf_label_main, 
-            aux1_pred, aux2_pred, main_pred,
-            aux1_loss, aux2_loss, main_loss, 
-            final_loss, gene_vars, main_possibility)
-
-'''
-def create_optimizers(train_loss):
-    learning_rate  = tf.placeholder(dtype=tf.float32, name='learning_rate')
-    momentum = FLAGS.momentum
-    train_opti = tf.train.MomentumOptimizer(learning_rate, momentum)
-    global_step    = tf.Variable(0, dtype=tf.int64,   trainable=False, name='global_step')
-    
-    tvs = tf.trainable_variables()
-    accum_vars = [tf.Variable(tf.zeros_like(tv.initialized_value()), trainable=False) for tv in tvs]                                        
-    zero_ops = [tv.assign(tf.zeros_like(tv)) for tv in accum_vars]
-    
-    gvs = train_opti.compute_gradients(train_loss, tvs)
-    
-    accum_ops = [accum_vars[i].assign_add(gv[0]) for i, gv in enumerate(gvs)]
-    
-    train_minimize = train_opti.apply_gradients([(accum_vars[i], gv[1]) for i, gv in enumerate(gvs)],
-                                                name='apply_gradients',global_step=global_step)
-    
-    #train_minimize = train_opti.minimize(train_loss, name='loss_minimize', global_step=global_step)#, var_list=var_list)
-
-    return zero_ops,accum_ops,train_minimize, learning_rate, global_step
-'''
+    model_ret = (tf_t1_input, tf_t2_input, tf_label_main, 
+                aux1_pred, aux2_pred, main_pred,
+                aux1_loss, aux2_loss, main_loss, 
+                final_loss, gene_vars, main_possibility)
+    if not FLAGS.stage_1:
+        model_ret += (tf_dm_input1, tf_dm_input2, tf_dm_input3)
+    if FLAGS.use_error_map:
+        model_ret += (tf_weight_main,)
+    return model_ret

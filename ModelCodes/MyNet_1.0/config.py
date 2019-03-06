@@ -23,6 +23,9 @@ tf.app.flags.DEFINE_bool('stage_1', ARGS.getboolean('stage_1',True),
 if 'unet' in FLAGS.network.lower() or 'u-net' in FLAGS.network.lower():
     FLAGS.stage_1 = True
 
+tf.app.flags.DEFINE_bool('xavier_init', ARGS.getboolean('xavier_init'),
+                         "whether multi-modality is used")
+    
 tf.app.flags.DEFINE_integer('cls_out', ARGS.getint('cls_out'), 
                             "classfy how many categories")
 tf.app.flags.DEFINE_integer('batch_size', ARGS.getint('batch_size'), 
@@ -147,17 +150,32 @@ tf.app.flags.DEFINE_float('L2_loss_weight', ARGS.getfloat('L2_loss_weight'),
 tf.app.flags.DEFINE_bool('overwrite_split', ARGS.getboolean('overwrite_split',False),
                          "whether to overwrite existing data splitting file")
 
-tf.app.flags.DEFINE_string('hdf5_dir', ARGS['hdf5_dir'],
+tf.app.flags.DEFINE_string('hdf5_dir', ARGS.get('hdf5_dir',None),
                            "Store the path which contains hdf5 files.")
-tf.app.flags.DEFINE_string('train_data_dir', ARGS['train_data_dir'],
+tf.app.flags.DEFINE_string('train_data_dir', ARGS.get('train_data_dir',None),
                            "Store the training hdf5 file list.")
-tf.app.flags.DEFINE_string('hdf5_list_path', ARGS['hdf5_list_path'],
+tf.app.flags.DEFINE_string('hdf5_list_path', ARGS.get('hdf5_list_path',None),
                            "Store the training hdf5 file list.")
 tf.app.flags.DEFINE_string('hdf5_train_list_path', ARGS['hdf5_train_list_path'],
                            "Store the training hdf5 file list.")
 tf.app.flags.DEFINE_string('hdf5_validation_list_path', ARGS['hdf5_validation_list_path'], 
                            "Store the validation hdf5 file list.")
 
+tf.app.flags.DEFINE_bool('use_error_map', ARGS.getboolean('use_error_map',False), 
+                         "Whether to use the error map to balance the loss function.")
+
+if FLAGS.use_error_map:
+    tf.app.flags.DEFINE_string('error_map_kernel', ARGS.get('error_map_kernel','ones'),
+                           "The convolution kernel used to smooth out the error map.")
+    tf.app.flags.DEFINE_integer('error_map_kernel_size', ARGS.getint('error_map_kernel_size',3), 
+                            "The kernel size used for error map.")
+    tf.app.flags.DEFINE_float('error_map_correct_weight', ARGS.getfloat('error_map_correct_weight',0.1), 
+                          "The weight assigned to the locations with correct prediction")
+'''
+error_map_kernel = 'ones'
+error_map_kernel_size = 3
+error_map_correct_weight = 0.5
+'''
 ################# Pretrain Model: Partial Transfer Learning  ########################################################
 tf.app.flags.DEFINE_bool('from_pretrain', ARGS.getboolean('from_pretrain'), 
                          "when init value from pretrain-ed model")
@@ -167,8 +185,6 @@ tf.app.flags.DEFINE_string('hdf5_sports_3d_model', ARGS['hdf5_sports_3d_model'],
                            "where is the pre-trained model")
 tf.app.flags.DEFINE_string('model_saved_hdf5', ARGS['model_saved_hdf5'],
                            "where is the pre-trained model")
-tf.app.flags.DEFINE_bool('xavier_init', ARGS.getboolean('xavier_init'),
-                         "whether multi-modality is used")
 
 
 tf.app.flags.DEFINE_bool('log_device_placement', ARGS.getboolean('log_device_placement'), 
@@ -181,9 +197,12 @@ tf.app.flags.DEFINE_float('epsilon', ARGS.getfloat('epsilon'),
 
 ################ Test Data ###############################
 #tf.app.flags.DEFINE_string('test_dir','/proj/NIRAL/users/jphong/6moSegData/IBIS/Test',"the directory which contains nifti images to be segmented.")
+tf.app.flags.DEFINE_bool('output_error_map', ARGS.getboolean('output_error_map',True), 
+                         "Whether to compute the error map along with the distance map.")
+
 tf.app.flags.DEFINE_string('hdf5_test_list_path', ARGS.get('hdf5_test_list_path',None), 
                            "Store the test hdf5 file list.")
-tf.app.flags.DEFINE_string('test_dir', ARGS['test_dir'],
+tf.app.flags.DEFINE_string('test_dir', ARGS.get('test_dir',None),
                            "the directory which contains nifti images to be segmented.")
 tf.app.flags.DEFINE_bool('load_test_with_sitk', ARGS.getboolean('load_test_with_sitk',True), 
                          "load the test/inference images with SimpleITK.")

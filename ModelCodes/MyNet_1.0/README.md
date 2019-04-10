@@ -1,9 +1,9 @@
-# Stage 1 for Multi-stream 3D FCN with Multi-scale deep supervision for multi-modality isointense infant brain MR image segmentation
+# Codes for NeonateSeg Project
 
-This project works on volumetric infant brain segmentation with 3D Neural Network based on tensorflow framework. If you have any question, please feel free to contact with guoyan.zheng@istb.unibe.ch 
+Contact siyangj@live.unc.edu for questions. All rights reserved.
 
 ### Code structure
-* preprocess.py  Generate hdf5 file and prepare for training.
+* preprocess.py  **Deprecated** Generate hdf5 file and prepare for training.
 * main.py  this is the entrance where start to train
 * demo.py this is where start to do test
 

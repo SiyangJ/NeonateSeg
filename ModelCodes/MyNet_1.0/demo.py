@@ -7,8 +7,11 @@ import random
 import numpy as np
 import os
 import sys
+import SimpleITK as sitk
 # from generator import get_training_and_testing_generators
 from config import FLAGS
+
+from util.utils import parse_patch_size
 
 if 'bern' in FLAGS.network.lower():
     if FLAGS.stage_1:
@@ -19,16 +22,12 @@ if 'bern' in FLAGS.network.lower():
         from BernNet import create_model_infant_t1t2dm123_seg as create_model
 
 elif 'unet' in FLAGS.network.lower() or 'u-net' in FLAGS.network.lower():
-    if FLAGS.stage_1:
-        if 'early' in FLAGS.network.lower():
-            print ">>> **Network**: UNet Early Fusion"
-            from UNet import create_UNet_early_fusion as create_model
-        else:
-            print ">>> **Network**: UNet Late Fusion"
-            from UNet import create_UNet_late_fusion as create_model
+    if 'early' in FLAGS.network.lower():
+        print ">>> **Network**: UNet Early Fusion"
+        from UNet import create_UNet_early_fusion as create_model
     else:
-        print 'Not yet finished'
-        sys.exit(0)
+        print ">>> **Network**: UNet Late Fusion"
+        from UNet import create_UNet_late_fusion as create_model
 
 
 if FLAGS.stage_1:
@@ -136,11 +135,9 @@ def evaluate():
     saver.restore(sess, model_path)
     
     test_data = TestData(locals())
-    
     from predict_multimodality_sitk import eval_test_images_in_sitk
-    
-    return eval_test_images_in_sitk(test_data,train_phase=False)
-
+    return eval_test_images_in_sitk(test_data,train_phase=False)  
+                
 def main(argv=None):
     print ('>> start testing phase...')
     test()

@@ -19,15 +19,20 @@ tf.app.flags.DEFINE_string('network', ARGS.get('network','BernNet'),
 
 tf.app.flags.DEFINE_bool('stage_1', ARGS.getboolean('stage_1',True), 
                          "whether is stage 1; default is True")
-
+# print ARGS.getboolean('stage_1',True)
+# > False
+'''
 if 'unet' in FLAGS.network.lower() or 'u-net' in FLAGS.network.lower():
     FLAGS.stage_1 = True
+'''
 
 tf.app.flags.DEFINE_bool('xavier_init', ARGS.getboolean('xavier_init'),
                          "whether multi-modality is used")
     
 tf.app.flags.DEFINE_integer('cls_out', ARGS.getint('cls_out'), 
                             "classfy how many categories")
+tf.app.flags.DEFINE_string('cls_labels', ARGS.get('cls_labels',"0,1,2,3"), 
+                           "Class labels; default is 0,1,2,3")
 tf.app.flags.DEFINE_integer('batch_size', ARGS.getint('batch_size'), 
                             "Number of samples per batch.")
 tf.app.flags.DEFINE_integer('accumulate_times', ARGS.getint('accumulate_times',1), 
@@ -51,12 +56,27 @@ tf.app.flags.DEFINE_integer('early_stop_max_fail',
                             ARGS.getint('early_stop_max_fail',3), 
                             "Stop the training and go back to the last best result.")
 
+tf.app.flags.DEFINE_bool('save_around_best', ARGS.getboolean('save_around_best',False), 
+                         "whether to save multiple checkpoints around the best one")
+if FLAGS.save_around_best:
+    tf.app.flags.DEFINE_integer('save_around_num', ARGS.getint('save_around_num',2), 
+                            "Save X models before and after the best one.")
+tf.app.flags.DEFINE_bool('predict_around_best', ARGS.getboolean('predict_around_best',FLAGS.save_around_best), 
+                         "whether to predict with multiple checkpoints around the best one")
+
 tf.app.flags.DEFINE_string('patch_size_str', ARGS['patch_size_str'], 
                            "patch size that we will extract from 3D image")
 tf.app.flags.DEFINE_integer('batches_one_image', ARGS.getint('batches_one_image'), 
                             "how many batches extraction from a 3D image for training")
 tf.app.flags.DEFINE_integer('overlap_add_num', ARGS.getint('overlap_add_num'), 
                             "patch_num = Len/patch_size + overlap_add_num when extracting patches for test")
+tf.app.flags.DEFINE_integer('max_patch_num', ARGS.getint('max_patch_num',1000), 
+                            "Max number pf patches generated a single time to avoid OOM")
+
+'''
+max_patch_num=1500
+'''
+
 tf.app.flags.DEFINE_integer('prepost_pad', ARGS.getint('prepost_pad'), 
                             "padding when remove zero backgrounds in preprocess")
 tf.app.flags.DEFINE_integer('training_crop_pad', ARGS.getint('training_crop_pad'), 
@@ -179,12 +199,13 @@ error_map_correct_weight = 0.5
 ################# Pretrain Model: Partial Transfer Learning  ########################################################
 tf.app.flags.DEFINE_bool('from_pretrain', ARGS.getboolean('from_pretrain'), 
                          "when init value from pretrain-ed model")
-tf.app.flags.DEFINE_string('hdf5_hip_transfer_model', ARGS['hdf5_hip_transfer_model'],
-                           "where is the pre-trained model")
-tf.app.flags.DEFINE_string('hdf5_sports_3d_model', ARGS['hdf5_sports_3d_model'],
-                           "where is the pre-trained model")
-tf.app.flags.DEFINE_string('model_saved_hdf5', ARGS['model_saved_hdf5'],
-                           "where is the pre-trained model")
+if FLAGS.from_pretrain:
+    tf.app.flags.DEFINE_string('hdf5_hip_transfer_model', ARGS['hdf5_hip_transfer_model'],
+                               "where is the pre-trained model")
+    tf.app.flags.DEFINE_string('hdf5_sports_3d_model', ARGS['hdf5_sports_3d_model'],
+                               "where is the pre-trained model")
+    tf.app.flags.DEFINE_string('model_saved_hdf5', ARGS['model_saved_hdf5'],
+                               "where is the pre-trained model")
 
 
 tf.app.flags.DEFINE_bool('log_device_placement', ARGS.getboolean('log_device_placement'), 
@@ -197,8 +218,10 @@ tf.app.flags.DEFINE_float('epsilon', ARGS.getfloat('epsilon'),
 
 ################ Test Data ###############################
 #tf.app.flags.DEFINE_string('test_dir','/proj/NIRAL/users/jphong/6moSegData/IBIS/Test',"the directory which contains nifti images to be segmented.")
-tf.app.flags.DEFINE_bool('output_error_map', ARGS.getboolean('output_error_map',True), 
+tf.app.flags.DEFINE_bool('output_error_map', ARGS.getboolean('output_error_map',False), 
                          "Whether to compute the error map along with the distance map.")
+tf.app.flags.DEFINE_bool('split_data_after_test', ARGS.getboolean('split_data_after_test',True), 
+                         "Whether to create train-validation-test split after inference.")
 
 tf.app.flags.DEFINE_string('hdf5_test_list_path', ARGS.get('hdf5_test_list_path',None), 
                            "Store the test hdf5 file list.")

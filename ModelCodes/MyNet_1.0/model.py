@@ -50,11 +50,19 @@ def cal_loss(logits, labels, calculate_weights=FLAGS.calculate_class_weights, ad
     if calculate_weights:
         ## Enabled weights
         ## Test TODO
-        assert td is not None
+        '''
         labels_value = labels.eval()
         l_uni,l_counts = np.unique(labels_value,return_counts=True)
+        print '%%% DEBUG: l_uni: %s, l_counts: %s' % (l_uni,l_counts)
         weights = np.reciprocal(l_counts.astype(np.float32))
         classes_weights = weights * np.asarray(weights.shape,dtype=np.float32) / weights.sum()   
+        print '%%% DEBUG: classes_weights: %s' % classes_weights
+        '''
+        l_uni = tf.unique_with_counts(tf.reshape(labels,[-1]))
+        weights = tf.reciprocal(tf.to_float(l_uni.count))
+        weights_normalized = weights * tf.to_float(tf.size(weights))/tf.reduce_sum(weights)
+        classes_weights = tf.stop_gradient(weights_normalized)
+        print tf.shape(classes_weights)
         ##
     else:
         if FLAGS.class_weights_string is not None:

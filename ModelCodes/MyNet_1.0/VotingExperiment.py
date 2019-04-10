@@ -15,7 +15,7 @@ prediction_save_dir = FLAGS.prediction_save_dir
 STATS_LIST = []
 STATS_LIST_FILE = os.path.join(prediction_save_dir,'VotingExperiment.list')
 
-param_range = np.array([15,20,25,30,33,49])
+param_range = np.array([20,25,30,33,49])
 
 for _i in param_range:
     FLAGS.overlap_add_num = _i

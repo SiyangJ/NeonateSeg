@@ -7,6 +7,7 @@ from generator import get_training_and_testing_generators
 from copy import deepcopy
 from config import FLAGS
 import re
+from util.utils import parse_string_to_numbers
 
 from predict_multimodality_sitk import eval_test_images_in_sitk
 
@@ -19,6 +20,39 @@ def _save_checkpoint(train_data, batch, log=True):
     if log:
         print("Model saved in file: %s" % save_path)
         print ('Model saved in file: %s' % saver.last_checkpoints)
+        
+def _rename_checkpoint(old_suffix, new_suffix):
+
+    old_model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_'+str(old_suffix))
+    new_model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_'+str(new_suffix))
+    
+    os.rename(old_model_path,new_model_path)
+
+def _remove_one_checkpoint(batch):
+    for suf in ['.data-00000-of-00001','.index','.meta']:
+        ckpt_name = os.path.join(FLAGS.checkpoint_dir,'snapshot_'+str(batch)+suf)
+        os.remove(ckpt_name)
+    
+def _remove_checkpoint_before(batch):
+    sep = FLAGS.validate_every_n if FLAGS.save_around_best else FLAGS.checkpoint_period
+    for b in xrange(0,batch,sep):
+        if b==0:
+            continue
+        if os.path.exists(os.path.join(FLAGS.checkpoint_dir,'snapshot_'+str(b)+'.data-00000-of-00001')):
+            _remove_one_checkpoint(b)
+            
+def _remove_checkpoint_after(batch):
+    sep = FLAGS.validate_every_n if FLAGS.save_around_best else FLAGS.checkpoint_period
+    batch += sep
+    for b in xrange(batch,FLAGS.max_batch+1,sep):
+        if b==0:
+            continue
+        if os.path.exists(os.path.join(FLAGS.checkpoint_dir,'snapshot_'+str(b)+'.data-00000-of-00001')):
+            _remove_one_checkpoint(b)
+            
+def _remove_previous_not_needed(batch):
+    assert FLAGS.save_around_best, 'Can only be used for save_around_best'
+    _remove_checkpoint_before(batch - FLAGS.validate_every_n * FLAGS.save_around_num)
 
 def _initialize_variables(train_data):
     td = train_data
@@ -34,6 +68,21 @@ def _initialize_variables(train_data):
             init_op = tf.global_variables_initializer()
         print('**Training**: global variable initialization...')
         td.sess.run(init_op)
+        
+def _eval_write(train_data,batch):
+    td = train_data
+    stats_mean = eval_test_images_in_sitk(td)
+    
+    cls_labels = list(parse_string_to_numbers(FLAGS.cls_labels,to_type=int))
+    assert len(cls_labels)==FLAGS.cls_out, "Number of classes don't match"
+    
+    Dice_scores = [tf.Summary.Value(tag="Dice_%d"%_c, simple_value=stats_mean[_i]) for _i,_c in enumerate(cls_labels[1:])]
+    
+    summary = tf.Summary(value=Dice_scores)
+    
+    td.test_sum_writer.add_summary(summary, batch)
+    print '>>> Epoch %d Test: [%3.3f, %3.3f, %3.3f]' % (batch,stats_mean[1],stats_mean[2],stats_mean[3])
+    return stats_mean
 
 ## Rewrite the checkpoint file such that it always points to snapshot_best
 def _rewrite_checkpoint_to_best():
@@ -43,22 +92,19 @@ def _rewrite_checkpoint_to_best():
         _cf.seek(0)
         _cf.write(_cs)
         _cf.truncate()
-        
-def _eval_write(train_data,batch):
-    td = train_data
-    stats_mean = eval_test_images_in_sitk(td)
-    summary = tf.Summary(value=[
-        tf.Summary.Value(tag="Dice_1", simple_value=stats_mean[1]),
-        tf.Summary.Value(tag="Dice_2", simple_value=stats_mean[2]),
-        tf.Summary.Value(tag="Dice_3", simple_value=stats_mean[3]),
-    ])
-    td.test_sum_writer.add_summary(summary, batch)  
-    print '>>> Epoch %d Test: [%3.3f, %3.3f, %3.3f]' % (batch,stats_mean[1],stats_mean[2],stats_mean[3])
-    return stats_mean
 
-def _before_return(train_data,best_batch):
+def _write_best_batch_to_file(best_batch):
+    best_batch_file = os.path.join(FLAGS.checkpoint_dir,'best_batch')
+    with open(best_batch_file,'w') as f:
+        f.write('Best batch is:\n%d\n'%best_batch)
+
+def _before_return(train_data,best_batch,record_best_batch=True):
     td = train_data
     _rewrite_checkpoint_to_best()
+    if record_best_batch:
+        _write_best_batch_to_file(best_batch)
+    if FLAGS.save_around_best:
+        _remove_checkpoint_after(best_batch + FLAGS.validate_every_n * FLAGS.save_around_num)
     if FLAGS.test_after_training:
         saver = tf.train.Saver()
         model_path = os.path.join(FLAGS.checkpoint_dir,'snapshot_best')
@@ -198,6 +244,16 @@ def train_model(train_data):
             print("[%25s], Epoch: [%4d], Validation Main Loss: [%3.3f]" 
                   % (time.ctime(), batch, total_main_loss))  
             
+            '''
+            ## Save Around Model
+            if FLAGS.save_around_best and batch % FLAGS.validate_every_n==0:
+                for save_num in xrange(1,FLAGS.save_around_num+1):
+                    before_batch = FLAGS.validate_every_n * (FLAGS.save_around_num - save_num)
+                    if batch > before_batch:
+                        _move_save_around_to_previous(FLAGS.save_around_num - save_num)
+                _save_checkpoint(td, 'temp-0', log=False)
+            '''
+            
             ## Early stopping check
             
             if best_batch==-1 or total_main_loss < best_loss:
@@ -207,6 +263,8 @@ def train_model(train_data):
                 best_loss = total_main_loss
                 best_lr = lrval
                 fail_time = 0
+                if FLAGS.save_around_best:
+                    _remove_previous_not_needed(best_batch)
             elif batch-best_batch >= FLAGS.early_stop_iteration:
                 
                 if fail_time >= FLAGS.early_stop_max_fail:
@@ -255,9 +313,11 @@ def train_model(train_data):
                 
             td.sess.run(td.train_minimize,feed_dict=feed_dict)
             
-        if batch % FLAGS.checkpoint_period == 0:
+        if FLAGS.save_around_best and batch % FLAGS.validate_every_n==0:
             _save_checkpoint(td, batch)
-
+        elif batch % FLAGS.checkpoint_period == 0:
+            _save_checkpoint(td, batch)
+           
         if batch  >= FLAGS.max_batch:
             done = True
 

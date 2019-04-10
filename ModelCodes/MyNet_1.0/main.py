@@ -19,6 +19,13 @@ if 'bern' in FLAGS.network.lower():
         from BernNet import create_model_infant_t1t2dm123_seg as create_model
 
 elif 'unet' in FLAGS.network.lower() or 'u-net' in FLAGS.network.lower():
+    if 'early' in FLAGS.network.lower():
+        print ">>> **Network**: UNet Early Fusion"
+        from UNet import create_UNet_early_fusion as create_model
+    else:
+        print ">>> **Network**: UNet Late Fusion"
+        from UNet import create_UNet_late_fusion as create_model
+    '''
     if FLAGS.stage_1:
         if 'early' in FLAGS.network.lower():
             print ">>> **Network**: UNet Early Fusion"
@@ -29,6 +36,7 @@ elif 'unet' in FLAGS.network.lower() or 'u-net' in FLAGS.network.lower():
     else:
         print 'Not yet finished'
         sys.exit(0)
+    '''
 
 def prepare_dirs(delete_train_dir=False):
     # Create checkpoint dir (do not delete anything)
@@ -74,6 +82,7 @@ class TrainData(object):
 
 def train():
     
+    print 'main: stage_1 = %s'%FLAGS.stage_1
     print '>>> STAGE %d TRAINING <<<' % (1 if FLAGS.stage_1 else 2)
     
     prepare_dirs(delete_train_dir=False)

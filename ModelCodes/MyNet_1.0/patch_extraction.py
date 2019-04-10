@@ -9,6 +9,11 @@ def extract_overlapped_patches_index(img_data):
     ''' extract the start index of all overlapped patches from one image,
         img_data: depth*height*width
     '''
+    if len(img_data.shape) == 3:
+        img_data =  img_data[np.newaxis,np.newaxis,...]
+
+    assert len(img_data.shape)==5, ' dimension of volume image data must be 5..'
+    img_data = np.asarray(img_data, np.float32)
     
     # patch_size[] = FLAGS.patch_size[]
     patch_size = parse_patch_size(FLAGS.patch_size_str)
@@ -44,7 +49,7 @@ def extract_overlapped_patches_index(img_data):
 
     return patches_index, depth, height, width
 
-def extract_test_patches(img_data, img_label=None,normalise=True):
+def extract_test_patches(img_data, img_label=None,normalise=True,patches_index=None):
     # patch_size[] = FLAGS.patch_size[]
     patch_size = parse_patch_size(FLAGS.patch_size_str)
 
@@ -57,7 +62,10 @@ def extract_test_patches(img_data, img_label=None,normalise=True):
 
     assert len(img_data.shape)==5, ' dimension of volume image data must be 5..'
     img_data = np.asarray(img_data, np.float32)
-    patches_index, d, h, w = extract_overlapped_patches_index(img_data)
+    if patches_index is None:
+        patches_index, d, h, w = extract_overlapped_patches_index(img_data)
+    else:
+        d, h, w = img_data.shape[-3:]
 
     # print '*** patches_index:', patches_index.shape
 

@@ -4,7 +4,7 @@ import numpy as np
 import math
 import h5py
 import time
-from patch_extraction import extract_test_patches
+from patch_extraction import extract_test_patches,extract_overlapped_patches_index
 # from postprocess import post_predict
 from util.utils import Dice
 from util.utils import load_nifti, save_nifti
@@ -13,19 +13,27 @@ from util.utils import pickle_dump, pickle_load
 import nibabel as nib
 import tensorflow as tf
 import glob
-from util.utils import parse_patch_size,save_hdr_img
+from util.utils import parse_patch_size,save_hdr_img,parse_string_to_numbers
 
 from generator import get_data_list
 import SimpleITK as sitk
 
+def get_best_batch():
+    best_batch_file = os.path.join(FLAGS.checkpoint_dir, 'best_batch')
+    with open(best_batch_file) as f:
+        content = f.readlines()
+    # you may also want to remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
+    return int(content[1])
 
-def vote_overlapped_patch(predictions, patch_indx, d,h,w):
+def vote_overlapped_patch(predictions, patch_index, d,h,w,return_intermediate=False):
     '''
     Compute probability of overlapped patches
     '''
     assert len(predictions.shape)==6, 'vote_overlapped_patch, shape of predictions must be 6 '
     num_patch = predictions.shape[0]
-    assert num_patch==patch_indx.shape[0], 'the first dimention of predictions and pactch_indxs must be the same..'
+    print 'num_patch=%d\npatch_index.shape[0]=%d' % (num_patch,patch_index.shape[0])
+    assert num_patch==patch_index.shape[0], 'the first dimention of predictions and patch_index must be the same..'
     cls_num = predictions.shape[-1]
     assert cls_num == FLAGS.cls_out, 'currently, only 3 class-num can be done..'
     # patch_size = FLAGS.patch_size
@@ -38,7 +46,7 @@ def vote_overlapped_patch(predictions, patch_indx, d,h,w):
 
     for _i in xrange(num_patch):
         _pred = predictions[_i]
-        _pos = patch_indx[_i]
+        _pos = patch_index[_i]
 
         d_s, d_e = _pos[0], _pos[0]+patch_size[0]
         h_s, h_e = _pos[1], _pos[1]+patch_size[1]
@@ -51,16 +59,20 @@ def vote_overlapped_patch(predictions, patch_indx, d,h,w):
         sum_cls_all[d_s:d_e,h_s:h_e, w_s:w_e, :] += _pred[0]
         sum_cls_count[d_s:d_e,h_s:h_e, w_s:w_e, :] += 1
 
+    if return_intermediate:
+        return sum_cls_all,sum_cls_count
+    
     possibilty_map = sum_cls_all / sum_cls_count
     final_segmentation = np.argmax(possibilty_map, axis=-1)
     return final_segmentation, possibilty_map
 
-def _predict_input_patches_without_label(td,all_input_patch_list,index, d,h,w,stage_1,train_phase=False):
+def _predict_input_patches_without_label(td,all_input_patch_list,index, d,h,w,
+                                         stage_1,
+                                         train_phase=False,
+                                         return_intermediate=False):
     preds_main = []
-
-    start_time  = time.time()
     patch_num = all_input_patch_list[0].shape[0]
-    print '>> begin predict likelihood of each patch ..'
+    print '>> begin predict likelihood of each patch; total number: %d' % patch_num
     batch_size = FLAGS.batch_size if train_phase else 1
     batch_num = int(np.ceil(float(patch_num) / batch_size))
         
@@ -88,25 +100,27 @@ def _predict_input_patches_without_label(td,all_input_patch_list,index, d,h,w,st
     patches_pred = np.expand_dims(patches_pred,axis=1)
 
     print '>> begin vote in overlapped patch..'
-    seg_res, possibilty_map = vote_overlapped_patch(patches_pred, index, d,h,w)
-    # seconds
-    elapsed = int(time.time() - start_time)
-
-    print('predit patches of 1 image, cost [%3d] seconds' % (elapsed))
+    seg_res, possibilty_map = vote_overlapped_patch(patches_pred, index, d,h,w,return_intermediate=return_intermediate)
 
     return seg_res, possibilty_map
 
-def predict_multi_modality_one_img_without_label(td, t1_patches, t2_patches, index, d,h,w,train_phase=False):
+def predict_multi_modality_one_img_without_label(td, t1_patches, t2_patches, index, d,h,w,
+                                                 train_phase=False,
+                                                 return_intermediate=False):
     all_input_patch_list = [t1_patches, t2_patches,]
     seg_res, possibilty_map = _predict_input_patches_without_label(td,all_input_patch_list,index, d,h,w,
-                                                                   True,train_phase=train_phase)
+                                                                   True,
+                                                                   train_phase=train_phase,
+                                                                   return_intermediate=return_intermediate)
     return seg_res, possibilty_map
 
-def predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, index, d,h,w,train_phase=False):
+def predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, index, d,h,w,train_phase=False,return_intermediate=False):
     
     all_input_patch_list = [t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches]
     seg_res, possibilty_map = _predict_input_patches_without_label(td,all_input_patch_list,index, d,h,w,
-                                                                   False,train_phase=train_phase)
+                                                                   False,
+                                                                   train_phase=train_phase,
+                                                                   return_intermediate=return_intermediate)
     return seg_res, possibilty_map
 
 def remove_test_backgrounds(img_data, t2_data, img_data_dm1=None, img_data_dm2=None, img_data_dm3=None):
@@ -192,17 +206,46 @@ def predict_multi_modality_img_in_nifti_path(td, t1_nifti_path, t2_nifti_path, s
         dm3_data_rmbg = dm3_data_rmbg[np.newaxis, np.newaxis, ...]
         dm3_data_rmbg = np.asarray(dm3_data_rmbg, dtype=np.float32)
 
-    t1_patches, index, d,h,w = extract_test_patches(t1_data_rmbg)
-    t2_patches, index, d,h,w = extract_test_patches(t2_data_rmbg)
+        
+    #### Editted Mar 6
+    ## Enable predicting all patches in several rounds to avoid OOM
+    index, d, h, w = extract_overlapped_patches_index(t1_data_rmbg)
+    num_patches = index.shape[0]
+    num_iters = int(np.ceil(float(num_patches) / FLAGS.max_patch_num))
     
-    if not FLAGS.stage_1:
-        dm1_patches, index, d,h,w = extract_test_patches(dm1_data_rmbg,normalise=False)
-        dm2_patches, index, d,h,w = extract_test_patches(dm2_data_rmbg,normalise=False)
-        dm3_patches, index, d,h,w = extract_test_patches(dm3_data_rmbg,normalise=False)
-    if FLAGS.stage_1:
-        segmentations, possibilty_map =  predict_multi_modality_one_img_without_label(td, t1_patches,t2_patches, index, d,h,w,train_phase=train_phase)
-    else:
-        segmentations, possibilty_map = predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, index, d,h,w,train_phase=train_phase)
+    sum_cls_all_arr = []
+    sum_cls_count_arr = []
+    
+    for _i in xrange(num_iters):
+        
+        cur_patch_index_low = _i * FLAGS.max_patch_num
+        cur_patch_index_high = min((_i+1) * FLAGS.max_patch_num, num_patches)
+        
+        cur_patch_index = index[cur_patch_index_low : cur_patch_index_high]
+    
+        t1_patches, _,_,_,_ = extract_test_patches(t1_data_rmbg,patches_index=cur_patch_index)
+        t2_patches, _,_,_,_ = extract_test_patches(t2_data_rmbg,patches_index=cur_patch_index)
+
+        if not FLAGS.stage_1:
+            dm1_patches, _,_,_,_ = extract_test_patches(dm1_data_rmbg,normalise=False,patches_index=cur_patch_index)
+            dm2_patches, _,_,_,_ = extract_test_patches(dm2_data_rmbg,normalise=False,patches_index=cur_patch_index)
+            dm3_patches, _,_,_,_ = extract_test_patches(dm3_data_rmbg,normalise=False,patches_index=cur_patch_index)
+        if FLAGS.stage_1:
+            segmentations, possibilty_map =  predict_multi_modality_one_img_without_label(td, t1_patches,t2_patches, 
+                                                                                          cur_patch_index, d,h,w,
+                                                                                          train_phase=train_phase,
+                                                                                          return_intermediate=True)
+        else:
+            segmentations, possibilty_map = predict_multi_modality_dm_one_img_without_label(td, t1_patches, t2_patches,dm1_patches, dm2_patches,dm3_patches, cur_patch_index, d,h,w,train_phase=train_phase,return_intermediate=True)
+            
+        sum_cls_all_arr   += [segmentations,]
+        sum_cls_count_arr += [possibilty_map,]
+    
+    sum_cls_all = np.asarray(sum_cls_all_arr).sum(axis=0)
+    sum_cls_count = np.asarray(sum_cls_count_arr).sum(axis=0)
+    
+    possibilty_map = sum_cls_all / sum_cls_count
+    segmentations = np.argmax(possibilty_map, axis=-1)
 
     segmentations = np.asarray(segmentations,  'uint8')
     assert len(segmentations.shape) == 3, '** segmentation result must be in 3-dimension'
@@ -284,52 +327,8 @@ def generate_error_map(pred_path,true_path,file_name,prediction_save_dir=FLAGS.p
     error_map[error_map==0] = FLAGS.error_map_correct_weight
     
     save_sitk(error_map, output_file)
+
     
-## DONE editing
-def predict_multi_modality_test_images_in_sitk(td):
-
-    pred_list = os.path.join(FLAGS.prediction_save_dir,'prediction_stage_1.list')
-    if os.path.exists(pred_list):
-        print('The list file to store prediction already exists: %s' % pred_list)
-        os.remove(pred_list)
-    
-    ## Potentially also predict train and validation paths
-    for list_path in [FLAGS.hdf5_test_list_path, ]:
-        
-        dir_list = get_data_list(list_path)
-
-        for _dir in dir_list:
-            t1_file_path = _dir[0]
-            file_name = t1_file_path.split('/')[-1]
-            t2_file_path = _dir[1]
-            save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name)
-            print t1_file_path, t2_file_path
-            predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path)
-            
-            generate_distance_map(file_name)
-            if FLAGS.output_error_map:
-                truth_path = _dir[2]
-                generate_error_map(save_pred_path,truth_path,file_name)
-            
-            with open(pred_list,'a') as f:
-                f.write(t1_file_path)
-                f.write(',')
-                f.write(t2_file_path)
-                f.write(',')
-                f.write(_dir[2])
-                f.write(',')
-                f.write(os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name))
-                f.write(',')
-                for _i,_c in zip([1,2,3],[',',',','']):
-                    f.write(os.path.join(FLAGS.prediction_save_dir,'distance_map_cls%d-%s'%(_i,file_name)))
-                    f.write(_c)
-                if FLAGS.output_error_map:
-                    f.write(',')
-                    f.write(os.path.join(FLAGS.prediction_save_dir,'error_map-%s'%(file_name)))
-                f.write('\n')
-        print '>>> Finish predicting list %s' % list_path
-    print '>>> Prediction finished!!!'
-
 def regenerate_error_map(prediction_save_dir=FLAGS.prediction_save_dir,new_prediction_file=False):
     pred_list = os.path.join(prediction_save_dir,'prediction_stage_1.list')
     assert os.path.exists(pred_list),'The list file to store prediction does not exist: %s' % pred_list
@@ -385,7 +384,88 @@ def split_data(test_num=1,val_num=8,data_list=None):
     
     print '>>> Finish splitting data <<<'
     
+## 
+def predict_multi_modality_test_images_in_sitk(td):
+
+    pred_list = os.path.join(FLAGS.prediction_save_dir,'prediction_stage_1.list')
+    if os.path.exists(pred_list):
+        print('The list file to store prediction already exists: %s' % pred_list)
+        os.remove(pred_list)
     
+    ## Potentially also predict train and validation paths
+    for list_path in [FLAGS.hdf5_test_list_path, ]:
+        
+        dir_list = get_data_list(list_path)
+
+        for _dir in dir_list:
+            t1_file_path = _dir[0]
+            file_name = t1_file_path.split('/')[-1]
+            t2_file_path = _dir[1]
+            print t1_file_path, t2_file_path
+            if not FLAGS.save_around_best:
+                save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name)
+                predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path)
+            else:
+                saver = tf.train.Saver()
+                best_batch = get_best_batch()
+                print best_batch
+                
+                im_size = load_sitk(t1_file_path).shape
+                output_image = np.zeros(im_size + (4,))
+                
+                prediction_save_dir = FLAGS.prediction_save_dir
+                
+                for _i in xrange(-FLAGS.save_around_num, FLAGS.save_around_num+1):
+                    if _i ==0:
+                        batch = 'best'
+                    else:
+                        batch = best_batch + _i * FLAGS.validate_every_n
+                    
+                    model_path = os.path.join(FLAGS.checkpoint_dir, 'snapshot_%s'%batch)
+                    print('saver restore from:%s' % model_path)
+                    saver.restore(td.sess, model_path)
+
+                    FLAGS.prediction_save_dir = os.path.join(prediction_save_dir, 'batch_%s'%batch)
+                    if not os.path.exists(FLAGS.prediction_save_dir):
+                        os.mkdir(FLAGS.prediction_save_dir)
+                        
+                    save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name)
+                    predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path)
+                    
+                    cur_image = load_sitk(save_pred_path)
+                    for _l in xrange(FLAGS.cls_out):
+                        output_image[:,:,:,_l] += (cur_image==_l).astype(int)
+                
+                output_image = np.argmax(output_image,axis=-1)
+                FLAGS.prediction_save_dir = prediction_save_dir
+                save_sitk(output_image,os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name))
+            
+            generate_distance_map(file_name)
+            if FLAGS.output_error_map:
+                truth_path = _dir[2]
+                generate_error_map(save_pred_path,truth_path,file_name)
+            
+            with open(pred_list,'a') as f:
+                f.write(t1_file_path)
+                f.write(',')
+                f.write(t2_file_path)
+                f.write(',')
+                f.write(_dir[2])
+                f.write(',')
+                f.write(os.path.join(FLAGS.prediction_save_dir,'prediction-'+file_name))
+                f.write(',')
+                for _i,_c in zip([1,2,3],[',',',','']):
+                    f.write(os.path.join(FLAGS.prediction_save_dir,'distance_map_cls%d-%s'%(_i,file_name)))
+                    f.write(_c)
+                if FLAGS.output_error_map:
+                    f.write(',')
+                    f.write(os.path.join(FLAGS.prediction_save_dir,'error_map-%s'%(file_name)))
+                f.write('\n')
+        print '>>> Finish predicting list %s' % list_path
+    print '>>> Prediction finished!!!'
+    if FLAGS.split_data_after_test:
+        split_data(data_list=pred_list)
+        
 def predict_multi_modality_dm_test_images_in_sitk(td):
 
     assert not FLAGS.stage_1, "Can only be used in Stage 2"
@@ -406,8 +486,49 @@ def predict_multi_modality_dm_test_images_in_sitk(td):
             dm2_file_path = _dir[5]
             dm3_file_path = _dir[6]
             
+            '''
             save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name)
             predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path, dm1_file_path, dm2_file_path, dm3_file_path)
+            '''
+            
+            if not FLAGS.save_around_best:
+                save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name)
+                predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path, dm1_file_path, dm2_file_path, dm3_file_path)
+            else:
+                saver = tf.train.Saver()
+                best_batch = get_best_batch()
+                print 'best_batch=%s'%best_batch
+                
+                im_size = load_sitk(t1_file_path).shape
+                output_image = np.zeros(im_size + (4,))
+                
+                prediction_save_dir = FLAGS.prediction_save_dir
+                
+                for _i in xrange(-FLAGS.save_around_num, FLAGS.save_around_num+1):
+                    if _i ==0:
+                        batch = 'best'
+                    else:
+                        batch = best_batch + _i * FLAGS.validate_every_n
+                    
+                    model_path = os.path.join(FLAGS.checkpoint_dir, 'snapshot_%s'%batch)
+                    print('saver restore from:%s' % model_path)
+                    saver.restore(td.sess, model_path)
+
+                    FLAGS.prediction_save_dir = os.path.join(prediction_save_dir, 'batch_%s'%batch)
+                    if not os.path.exists(FLAGS.prediction_save_dir):
+                        os.mkdir(FLAGS.prediction_save_dir)
+                        
+                    save_pred_path = os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name)
+                    predict_multi_modality_img_in_nifti_path(td, t1_file_path, t2_file_path, save_pred_path, dm1_file_path, dm2_file_path, dm3_file_path)
+                    
+                    cur_image = load_sitk(save_pred_path)
+                    for _l in xrange(FLAGS.cls_out):
+                        output_image[:,:,:,_l] += (cur_image==_l).astype(int)
+                
+                output_image = np.argmax(output_image,axis=-1)
+                FLAGS.prediction_save_dir = prediction_save_dir
+                save_sitk(output_image,os.path.join(FLAGS.prediction_save_dir,'prediction-2-'+file_name))
+            
             with open(pred_list,'a') as f:
                 for _path in _dir:
                     f.write(_path)
@@ -416,8 +537,11 @@ def predict_multi_modality_dm_test_images_in_sitk(td):
                 f.write('\n')
         print '>>> Finish predicting list %s' % list_path
     print '>>> Prediction finished!!!'
-
+    
 def eval_test_images_in_sitk(td,train_phase=True,_debug=False):
+    
+    cls_labels = list(parse_string_to_numbers(FLAGS.cls_labels,to_type=int))
+    assert len(cls_labels)==FLAGS.cls_out, "Number of classes don't match"
     
     stats_list = []
     
@@ -450,7 +574,8 @@ def eval_test_images_in_sitk(td,train_phase=True,_debug=False):
             final_seg_list += [final_segmentation,]
             true_label_list += [true_label,]
         
-        stats_list += [Dice(final_segmentation,true_label),]
+        
+        stats_list += [Dice(final_segmentation,true_label,labels=cls_labels),]
     
     stats_list = np.asarray(stats_list)
     stats_mean = stats_list.mean(axis=0)

@@ -101,12 +101,17 @@ def main():
     print '>>>>>>>>>> TUNING STARTED <<<<<<<<<<<'
     print '>>> STAGE %d TRAINING <<<' % (1 if FLAGS.stage_1 else 2)
 
-    checkpoint_dir = FLAGS.checkpoint_dir
-    STATS_LIST = []
-    STATS_LIST_FILE = os.path.join(checkpoint_dir,'AuxWeightExperiment-aux2=%s.list'%FLAGS.aux2_weight)
-
     FLAGS.aux2_weight = float(sys.argv[2])
     print '>>> aux2_weight = %s' % FLAGS.aux2_weight
+    
+    checkpoint_dir = os.path.join(FLAGS.checkpoint_dir, 'aux2_weight=%s'%FLAGS.aux2_weight)
+    print '>>> checkpoint_dir parent folder: %s' % checkpoint_dir
+    if not os.path.exists(checkpoint_dir):
+        os.mkdir(checkpoint_dir)
+    
+    STATS_LIST = []
+    STATS_LIST_FILE = os.path.join(checkpoint_dir,'AuxWeightExperiment-aux2=%s.list'%FLAGS.aux2_weight)
+    print '>>> File to store stats: %s' % STATS_LIST_FILE
 
     param_name = 'aux1_weight'
     param_range = np.arange(0,FLAGS.aux2_weight,0.1)

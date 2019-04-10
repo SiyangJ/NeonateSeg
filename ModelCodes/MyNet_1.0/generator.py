@@ -31,6 +31,9 @@ def get_training_and_testing_generators(hdf5_train_list_file=FLAGS.hdf5_train_li
     training_generator = data_random_generator(training_list, batch_size=batch_size)
     validation_generator = data_random_generator(validation_list, batch_size=batch_size, for_training=False)
     
+    print '>>> Generating training data from %s' % hdf5_train_list_file
+    print '>>> Generating validation data from %s' % hdf5_validation_list_file
+    
     return training_generator, validation_generator
 
 def _get_patch_center():
@@ -171,9 +174,7 @@ def data_random_generator(hdf5_list,
         random strategy: 0. each time extract a batch_size from 
     '''
     patch_size = parse_patch_size(patch_size_str)
-    
-    print '>>> Generating data from %s' % hdf5_list
-    
+        
     ################ Preload Data
     if FLAGS.preload_data and FLAGS.load_with_sitk:
         if for_training and FLAGS.augmentation:
@@ -237,7 +238,7 @@ def data_random_generator(hdf5_list,
                 if FLAGS.preload_data:
                     img_data_t1,img_data_t2,img_label = _local_file[:3]                    
                     if not FLAGS.stage_1:
-                        img_dm1,img_dm2,img_dm3 = _local_file[[4,5,6]]
+                        img_dm1,img_dm2,img_dm3 = _local_file[4:7]
                         img_dm_list = [img_dm1,img_dm2,img_dm3]
                     if FLAGS.use_error_map:
                         img_weight = _local_file[-1]

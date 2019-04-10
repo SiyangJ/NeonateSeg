@@ -2,8 +2,10 @@ __pycache__/
 JP_6mon_model
 .ipynb_checkpoints/
 *.nrrd
+*.swp
 *.nii.gz
 *events.out.tfevents*
+*.zip
 myData/
 myTrialData/
 NeonateMRISeg/
